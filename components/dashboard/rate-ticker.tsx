@@ -112,8 +112,8 @@ export function RateTicker() {
   };
 
   const getChangeColor = (change: number) => {
-    if (change > 0) return "text-green-400";
-    if (change < 0) return "text-red-400";
+    if (change > 0) return "text-green-600 dark:text-green-400";
+    if (change < 0) return "text-red-600 dark:text-red-400";
     return "text-muted-foreground";
   };
 
@@ -125,8 +125,10 @@ export function RateTicker() {
 
   return (
     <Card className="card-enhanced">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-poppins">Live Rate Ticker</CardTitle>
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+        <CardTitle className="text-base sm:text-lg font-poppins">
+          Live Rate Ticker
+        </CardTitle>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
             Last updated: {lastUpdated.toLocaleTimeString()}
@@ -145,24 +147,26 @@ export function RateTicker() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="responsive-grid-3 lg:grid-cols-6">
           {rates.map((rate) => (
             <div
               key={rate.symbol}
-              className="flex flex-col items-center p-4 rounded-lg bg-muted/20 border border-border/50 hover:bg-muted/30 transition-colors"
+              className="flex flex-col items-center p-3 sm:p-4 rounded-lg bg-muted/20 border border-border hover:bg-muted/30 transition-colors"
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">{rate.icon}</span>
+                <span className="text-base sm:text-lg">{rate.icon}</span>
                 <div className="text-center">
-                  <div className="font-semibold text-sm">{rate.symbol}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="font-semibold text-xs sm:text-sm">
+                    {rate.symbol}
+                  </div>
+                  <div className="text-xs text-muted-foreground hidden sm:block">
                     {rate.name}
                   </div>
                 </div>
               </div>
 
               <div className="text-center">
-                <div className="font-mono font-bold text-lg">
+                <div className="font-mono font-bold text-sm sm:text-lg">
                   {formatPrice(rate.price, rate.symbol)}
                 </div>
 
@@ -183,16 +187,22 @@ export function RateTicker() {
         </div>
 
         {/* Summary Stats */}
-        <div className="mt-6 pt-4 border-t border-border/50">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-sm text-muted-foreground">Active Rates</div>
-              <div className="text-lg font-bold">{rates.length}</div>
+        <div className="mt-4 sm:mt-6 pt-4 border-t border-border">
+          <div className="responsive-grid-4">
+            <div className="text-center">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Active Rates
+              </div>
+              <div className="text-base sm:text-lg font-bold">
+                {rates.length}
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Avg Change</div>
+            <div className="text-center">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Avg Change
+              </div>
               <div
-                className={`text-lg font-bold ${getChangeColor(
+                className={`text-base sm:text-lg font-bold ${getChangeColor(
                   rates.reduce((acc, rate) => acc + rate.changePercent, 0) /
                     rates.length
                 )}`}
@@ -204,15 +214,19 @@ export function RateTicker() {
                 %
               </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Gainers</div>
-              <div className="text-lg font-bold text-green-400">
+            <div className="text-center">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Gainers
+              </div>
+              <div className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
                 {rates.filter((rate) => rate.change > 0).length}
               </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Losers</div>
-              <div className="text-lg font-bold text-red-400">
+            <div className="text-center">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Losers
+              </div>
+              <div className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
                 {rates.filter((rate) => rate.change < 0).length}
               </div>
             </div>

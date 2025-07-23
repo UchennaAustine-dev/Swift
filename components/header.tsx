@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -34,9 +34,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Wrench,
+  Monitor,
   Sun,
   Moon,
-  Monitor,
 } from "lucide-react";
 
 export function Header() {
@@ -63,6 +63,11 @@ export function Header() {
       time: "1 hour ago",
     },
   ]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleMaintenanceToggle = (checked: boolean) => {
     if (checked) {
@@ -101,14 +106,28 @@ export function Header() {
     }
   };
 
+  if (!mounted) {
+    return (
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-50">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <div className="flex flex-1 items-center justify-end">
+          <Button variant="ghost" size="icon" disabled>
+            <Sun className="h-4 w-4" />
+          </Button>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <>
-      <header className="fixed-header flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 z-50">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-50 backdrop-blur-sm">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
 
         {/* Logo and System Status */}
-        <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center gap-2 md:gap-4 flex-1">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <span className="text-sm font-bold font-poppins">S</span>
@@ -123,19 +142,21 @@ export function Header() {
 
           {/* Environment and Status Badges */}
           <div className="flex items-center gap-2">
-            <Badge variant="default" className="bg-green-500 text-white">
+            <Badge
+              variant="default"
+              className="bg-green-500 text-white text-xs"
+            >
               LIVE
             </Badge>
-
             {maintenanceMode ? (
-              <Badge variant="destructive" className="animate-pulse">
+              <Badge variant="destructive" className="animate-pulse text-xs">
                 <Wrench className="h-3 w-3 mr-1" />
-                MAINTENANCE
+                <span className="hidden sm:inline">MAINTENANCE</span>
               </Badge>
             ) : (
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                <span className="text-xs text-muted-foreground hidden sm:inline">
+                <span className="text-xs text-muted-foreground hidden md:inline">
                   System Online
                 </span>
               </div>
@@ -144,15 +165,19 @@ export function Header() {
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           {/* Theme Toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
                 {getThemeIcon()}
+                <span className="sr-only">Toggle theme</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              className="bg-background border border-border"
+            >
               <DropdownMenuLabel>Theme</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setTheme("light")}>
@@ -171,7 +196,7 @@ export function Header() {
           </DropdownMenu>
 
           {/* Maintenance Mode Toggle - Only for Super Admin */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             <Label
               htmlFor="maintenance-toggle"
               className="text-xs text-muted-foreground"
@@ -203,7 +228,10 @@ export function Header() {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent
+              align="end"
+              className="w-80 bg-background border border-border"
+            >
               <DropdownMenuLabel className="flex items-center gap-2">
                 <Bell className="h-4 w-4" />
                 Notifications
@@ -248,7 +276,10 @@ export function Header() {
                 <Activity className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuContent
+              align="end"
+              className="w-64 bg-background border border-border"
+            >
               <DropdownMenuLabel>System Status</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="p-3 space-y-3">
@@ -289,11 +320,17 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>DT</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    DT
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent
+              className="w-56 bg-background border border-border"
+              align="end"
+              forceMount
+            >
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
@@ -332,7 +369,7 @@ export function Header() {
         open={isMaintenanceModalOpen}
         onOpenChange={setIsMaintenanceModalOpen}
       >
-        <DialogContent>
+        <DialogContent className="bg-background border border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />

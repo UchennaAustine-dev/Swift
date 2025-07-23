@@ -10,15 +10,25 @@ import {
   Plus,
   Download,
   Users,
-  Shield,
   AlertTriangle,
   Clock,
+  UserPlus,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddUserModal } from "@/components/modals/add-user-modal";
 import { UserModal } from "@/components/modals/user-modal";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import type { User } from "@/lib/types";
 
 // Mock user data matching the design
@@ -62,6 +72,26 @@ const mockUsers: User[] = [
     kycStatus: "failed",
     totalTrades: 12,
     joinedAt: "2024-01-05",
+  },
+  {
+    id: "USR-005",
+    username: "@newtrader2024",
+    platform: "telegram",
+    role: "customer",
+    status: "active",
+    kycStatus: "pending",
+    totalTrades: 8,
+    joinedAt: "2024-03-15",
+  },
+  {
+    id: "USR-006",
+    username: "+23487654321",
+    platform: "whatsapp",
+    role: "customer",
+    status: "blocked",
+    kycStatus: "failed",
+    totalTrades: 3,
+    joinedAt: "2024-02-28",
   },
 ];
 
@@ -148,7 +178,10 @@ export default function UsersPage() {
       key: "id",
       label: "USER ID",
       render: (value: string) => (
-        <Button variant="link" className="p-0 h-auto font-mono text-blue-400">
+        <Button
+          variant="link"
+          className="p-0 h-auto font-mono text-blue-400 text-xs sm:text-sm"
+        >
           {value}
         </Button>
       ),
@@ -156,7 +189,7 @@ export default function UsersPage() {
     {
       key: "username",
       label: "USERNAME",
-      className: "font-medium",
+      className: "font-medium text-xs sm:text-sm",
     },
     {
       key: "platform",
@@ -164,9 +197,9 @@ export default function UsersPage() {
       render: (value: string) => (
         <Badge
           variant="outline"
-          className={
+          className={`text-xs ${
             value === "telegram" ? "platform-telegram" : "platform-whatsapp"
-          }
+          }`}
         >
           {value === "telegram" ? "Telegram" : "WhatsApp"}
         </Badge>
@@ -174,8 +207,8 @@ export default function UsersPage() {
     },
     {
       key: "totalTrades",
-      label: "TOTAL TRADES",
-      className: "font-mono",
+      label: "TRADES",
+      className: "font-mono text-xs sm:text-sm",
     },
     {
       key: "status",
@@ -183,13 +216,13 @@ export default function UsersPage() {
       render: (value: string) => (
         <Badge
           variant="outline"
-          className={
+          className={`text-xs ${
             value === "active"
               ? "status-active"
               : value === "flagged"
               ? "bg-red-500/20 text-red-400 border-red-500/30"
               : "status-inactive"
-          }
+          }`}
         >
           {value === "active" && "Active"}
           {value === "flagged" && "Flagged"}
@@ -201,18 +234,18 @@ export default function UsersPage() {
       key: "role",
       label: "ROLE",
       render: (value: string) => (
-        <Badge variant="outline" className="capitalize">
+        <Badge variant="outline" className="capitalize text-xs">
           {value}
         </Badge>
       ),
     },
     {
       key: "kycStatus",
-      label: "KYC STATUS",
+      label: "KYC",
       render: (value: string) => (
         <Badge
           variant="outline"
-          className={
+          className={`text-xs ${
             value === "verified"
               ? "bg-green-500/20 text-green-400 border-green-500/30"
               : value === "pending"
@@ -220,12 +253,12 @@ export default function UsersPage() {
               : value === "failed"
               ? "bg-red-500/20 text-red-400 border-red-500/30"
               : "bg-gray-500/20 text-gray-400 border-gray-500/30"
-          }
+          }`}
         >
-          {value === "verified" && "Verified"}
-          {value === "pending" && "Pending"}
-          {value === "failed" && "Failed"}
-          {value === "not_started" && "Not Required"}
+          {value === "verified" && "✓"}
+          {value === "pending" && "⏳"}
+          {value === "failed" && "✗"}
+          {value === "not_started" && "—"}
         </Badge>
       ),
     },
@@ -259,140 +292,223 @@ export default function UsersPage() {
     },
   ];
 
-  const totalUsers = 12847;
-  const activeToday = 1247;
-  const flaggedUsers = 8;
-  const pendingKYC = 156;
+  // Statistics
+  const totalUsers = mockUsers.length;
+  const activeUsers = mockUsers.filter((u) => u.status === "active").length;
+  const flaggedUsers = mockUsers.filter((u) => u.status === "flagged").length;
+  const pendingKYC = mockUsers.filter((u) => u.kycStatus === "pending").length;
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col min-h-screen">
         <Header />
-        <div className="flex flex-1 flex-col gap-6 container-padding pt-0">
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold font-poppins">
-                Users Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage customers, admins, and user permissions
-              </p>
-            </div>
+        <main className="flex-1 bg-background">
+          <div className="container-padding py-4 md:py-6 lg:py-8 space-y-6">
+            {/* Breadcrumb Navigation */}
+            <div className="flex flex-col space-y-4">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href="/"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Dashboard
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-medium">
+                      Users Management
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
 
-            {/* Overview Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card className="card-enhanced">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Users
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Users className="h-4 w-4 text-blue-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold font-poppins">
-                    {totalUsers.toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="card-enhanced">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Active Today
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <Shield className="h-4 w-4 text-green-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold font-poppins">
-                    {activeToday.toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="card-enhanced">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Flagged Users
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                    <AlertTriangle className="h-4 w-4 text-red-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold font-poppins">
-                    {flaggedUsers}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="card-enhanced">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Pending KYC
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                    <Clock className="h-4 w-4 text-orange-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold font-poppins">
-                    {pendingKYC}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Users Table */}
-            <Card className="card-enhanced">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                <CardTitle className="font-poppins">All Users</CardTitle>
-                <div className="flex items-center gap-2">
+              {/* Page Header */}
+              <div className="flex flex-col space-y-2 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                <div className="space-y-1">
+                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-poppins tracking-tight">
+                    Users Management
+                  </h1>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    Manage customers, admins, and user permissions across all
+                    platforms
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto bg-transparent"
+                    className="bg-background hover:bg-muted"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Export
+                    Export Users
                   </Button>
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="w-full sm:w-auto"
+                    className="bg-primary hover:bg-primary/90"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add User
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add New User
                   </Button>
                 </div>
+              </div>
+            </div>
+
+            {/* Overview Statistics Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Total Users
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {totalUsers.toLocaleString()}
+                  </div>
+                  <div className="flex items-center text-xs text-green-500">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    <span>+12% from last month</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Active Users
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Activity className="h-4 w-4 text-green-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {activeUsers.toLocaleString()}
+                  </div>
+                  <div className="flex items-center text-xs text-green-500">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    <span>+8% from yesterday</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Flagged Users
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {flaggedUsers}
+                  </div>
+                  <div className="flex items-center text-xs text-red-500">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    <span>Requires attention</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Pending KYC
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {pendingKYC}
+                  </div>
+                  <div className="flex items-center text-xs text-orange-500">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>Awaiting review</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Users Table Section */}
+            <Card className="card-enhanced shadow-sm">
+              <CardHeader className="border-b border-border/50">
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg sm:text-xl font-poppins">
+                      All Users
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Manage and monitor all registered users across platforms
+                    </p>
+                  </div>
+                  {/* <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="bg-background hover:bg-muted"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                    <Button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Add User</span>
+                    </Button>
+                  </div> */}
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <SearchFilters
-                  searchPlaceholder="Search..."
-                  filterOptions={filterOptions}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  onFilterChange={handleFilterChange}
-                  onClearFilters={handleClearFilters}
-                  activeFilters={activeFilters}
-                />
 
-                <MobileTable
-                  data={filteredUsers}
-                  columns={columns}
-                  actions={actions}
-                  emptyMessage="No users found"
-                />
+              <CardContent className="p-0">
+                <div className="p-4 sm:p-6 space-y-4">
+                  <SearchFilters
+                    searchPlaceholder="Search users by ID or username..."
+                    filterOptions={filterOptions}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={handleClearFilters}
+                    activeFilters={activeFilters}
+                  />
 
-                <div className="text-sm text-muted-foreground">
-                  Showing 1 to 4 of 4 results
+                  <div className="rounded-lg border border-border/50 overflow-hidden">
+                    <MobileTable
+                      data={filteredUsers}
+                      columns={columns}
+                      actions={actions}
+                      emptyMessage="No users found matching your criteria"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+                    <div>
+                      Showing {filteredUsers.length} of {totalUsers} users
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>Results per page:</span>
+                      <select className="bg-background border border-border rounded px-2 py-1 text-sm">
+                        <option>10</option>
+                        <option>25</option>
+                        <option>50</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </main>
       </SidebarInset>
 
       <AddUserModal

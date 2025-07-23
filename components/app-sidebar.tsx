@@ -104,38 +104,54 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   return (
-    <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
+    <Sidebar
+      variant="inset"
+      className="bg-sidebar border-r border-sidebar-border"
+      {...props}
+    >
+      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900 text-primary-foreground">
-            <span className="text-sm font-bold">S</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <span className="text-sm font-bold font-poppins">S</span>
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Swiftlify</span>
-            <span className="truncate text-xs text-muted-foreground">
+            <span className="truncate font-semibold font-poppins text-sidebar-foreground">
+              Swiftlify
+            </span>
+            <span className="truncate text-xs text-sidebar-foreground/70">
               Admin Dashboard
             </span>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge
+            variant="secondary"
+            className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+          >
             LIVE
           </Badge>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
+                    <Link
+                      href={item.url}
+                      className="text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                   {item.badge && (
-                    <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+                    <SidebarMenuBadge className="bg-primary text-primary-foreground">
+                      {item.badge}
+                    </SidebarMenuBadge>
                   )}
                 </SidebarMenuItem>
               ))}
@@ -143,8 +159,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="p-4 text-xs text-muted-foreground">
+      <SidebarFooter className="bg-sidebar border-t border-sidebar-border">
+        <div className="p-4 text-xs text-sidebar-foreground/70">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
             <span>System Online</span>

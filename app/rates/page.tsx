@@ -124,7 +124,7 @@ export default function RatesPage() {
         <Header />
         <div className="scrollable-content flex flex-1 flex-col gap-6 container-padding">
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-9">
             <div>
               <h1 className="heading-responsive font-bold font-poppins">
                 Exchange Rates

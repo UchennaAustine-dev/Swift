@@ -61,26 +61,26 @@ const mockActivity: ActivityItem[] = [
 
 export function RecentActivity() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {mockActivity.slice(0, 4).map((item) => (
         <div
           key={item.id}
-          className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+          className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
         >
           {item.user ? (
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">
+            <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 mt-0.5">
+              <AvatarFallback className="text-xs sm:text-sm font-medium">
                 {item.user.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           ) : (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+            <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-muted flex-shrink-0 mt-0.5">
               <span className="text-xs font-semibold">SYS</span>
             </div>
           )}
           <div className="flex-1 space-y-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-xs truncate">
+            <div className="flex items-start sm:items-center gap-2 flex-col sm:flex-row">
+              <span className="font-medium text-xs sm:text-sm leading-tight">
                 {item.action}
               </span>
               {item.status && (
@@ -92,16 +92,16 @@ export function RecentActivity() {
                       ? "secondary"
                       : "destructive"
                   }
-                  className="text-xs px-1 py-0"
+                  className="text-xs px-1.5 py-0.5 flex-shrink-0 w-fit"
                 >
                   {item.status}
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
               {item.details}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground opacity-75">
               {formatDistanceToNow(new Date(item.timestamp), {
                 addSuffix: true,
               })}
