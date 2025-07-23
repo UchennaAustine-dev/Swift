@@ -491,7 +491,7 @@ export default function SupportPage() {
                 <CardTitle className="font-poppins">
                   All Support Requests
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <Select defaultValue="all-severity">
                     <SelectTrigger className="w-32 bg-background/50 border-border/50">
                       <SelectValue />
@@ -535,7 +535,7 @@ export default function SupportPage() {
                     <Filter className="h-4 w-4 mr-2" />
                     Filter
                   </Button>
-                </div>
+                </div> */}
               </CardHeader>
               <CardContent className="space-y-4">
                 <SearchFilters
