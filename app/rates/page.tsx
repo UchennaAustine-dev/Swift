@@ -8,8 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SearchFilters } from "@/components/ui/search-filters";
-import { AddRateModal } from "@/components/modals/add-rate-modal";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Line,
   LineChart,
@@ -24,282 +36,560 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  Plus,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  FolderSyncIcon as Sync,
   Search,
+  Filter,
   TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Bitcoin,
-  Smartphone,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  RefreshCw,
+  Activity,
+  Target,
+  Settings,
+  Zap,
 } from "lucide-react";
 
-// Mock data for rates
-const mockRates = [
-  {
-    id: "1",
-    asset: "Bitcoin",
-    symbol: "BTC",
-    platform: "Telegram",
-    buyRate: 65500000,
-    sellRate: 66200000,
-    change: 2.5,
-    lastUpdated: "2 min ago",
-    status: "active",
-    icon: Bitcoin,
-  },
-  {
-    id: "2",
-    asset: "Ethereum",
-    symbol: "ETH",
-    platform: "WhatsApp",
-    buyRate: 4200000,
-    sellRate: 4250000,
-    change: -1.2,
-    lastUpdated: "5 min ago",
-    status: "active",
-    icon: DollarSign,
-  },
-  {
-    id: "3",
-    asset: "Amazon Gift Card",
-    symbol: "AGC",
-    platform: "Both",
-    buyRate: 850,
-    sellRate: 900,
-    change: 0.8,
-    lastUpdated: "10 min ago",
-    status: "active",
-    icon: Smartphone,
-  },
-];
+// Mock data for statistics
+const statsData = {
+  totalRates: 24,
+  autoRates: 18,
+  manualOverride: 6,
+  avgAccuracy: 98.6,
+};
 
 // Mock data for rate history chart
 const rateHistoryData = [
-  { time: "00:00", bitcoin: 65200000, ethereum: 4180000 },
-  { time: "04:00", bitcoin: 65400000, ethereum: 4190000 },
-  { time: "08:00", bitcoin: 65100000, ethereum: 4170000 },
-  { time: "12:00", bitcoin: 65600000, ethereum: 4210000 },
-  { time: "16:00", bitcoin: 65800000, ethereum: 4230000 },
-  { time: "20:00", bitcoin: 65500000, ethereum: 4200000 },
-  { time: "24:00", bitcoin: 66200000, ethereum: 4250000 },
+  { time: "00:00", btc: 98450000, eth: 5850000 },
+  { time: "04:00", btc: 98200000, eth: 5820000 },
+  { time: "08:00", btc: 98600000, eth: 5880000 },
+  { time: "12:00", btc: 98800000, eth: 5900000 },
+  { time: "16:00", btc: 99100000, eth: 5950000 },
+];
+
+// Mock data for exchange rates table
+const exchangeRatesData = [
+  {
+    id: "1",
+    asset: "BTC",
+    platform: "Telegram",
+    source: "API",
+    currentRate: "₦98,450,000",
+    autoMargin: "2.5%",
+    change24h: "+2.3%",
+    accuracy: "99.2%",
+    lastSynced: "2025-01-08 14:45:30",
+    changePositive: true,
+  },
+  {
+    id: "2",
+    asset: "BTC",
+    platform: "WhatsApp",
+    source: "Manual",
+    sourceType: "Override",
+    currentRate: "₦98,200,000",
+    autoMargin: "N/A",
+    change24h: "+2.1%",
+    accuracy: "100%",
+    lastSynced: "2025-01-08 12:30:15",
+    changePositive: true,
+  },
+  {
+    id: "3",
+    asset: "ETH",
+    platform: "Telegram",
+    source: "API",
+    currentRate: "₦5,850,000",
+    autoMargin: "3.0%",
+    change24h: "-1.2%",
+    accuracy: "98.8%",
+    lastSynced: "2025-01-08 14:44:22",
+    changePositive: false,
+  },
+  {
+    id: "4",
+    asset: "Steam",
+    platform: "WhatsApp",
+    source: "API",
+    currentRate: "₦1,425",
+    autoMargin: "5.5%",
+    change24h: "+0.5%",
+    accuracy: "97.5%",
+    lastSynced: "2025-01-08 14:43:15",
+    changePositive: true,
+  },
+];
+
+const filterOptions = [
+  {
+    key: "platform",
+    label: "All Platforms",
+    options: [
+      { value: "telegram", label: "Telegram" },
+      { value: "whatsapp", label: "WhatsApp" },
+    ],
+  },
+  {
+    key: "source",
+    label: "All Sources",
+    options: [
+      { value: "api", label: "API" },
+      { value: "manual", label: "Manual" },
+    ],
+  },
+  {
+    key: "asset",
+    label: "All Assets",
+    options: [
+      { value: "btc", label: "Bitcoin" },
+      { value: "eth", label: "Ethereum" },
+      { value: "steam", label: "Steam" },
+    ],
+  },
 ];
 
 export default function RatesPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `₦${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `₦${(amount / 1000).toFixed(0)}K`;
-    }
-    return `₦${amount.toLocaleString()}`;
-  };
-
-  const getChangeColor = (change: number) => {
-    if (change > 0) return "text-green-500";
-    if (change < 0) return "text-red-500";
-    return "text-muted-foreground";
-  };
-
-  const getChangeIcon = (change: number) => {
-    if (change > 0) return <TrendingUp className="h-3 w-3" />;
-    if (change < 0) return <TrendingDown className="h-3 w-3" />;
-    return null;
-  };
-
-  const filteredRates = mockRates.filter(
-    (rate) =>
-      rate.asset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rate.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rate.platform.toLowerCase().includes(searchTerm.toLowerCase())
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(
+    {}
   );
+
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setSearchQuery("");
+  };
+
+  const getPlatformBadgeClass = (platform: string) => {
+    return platform === "Telegram" ? "platform-telegram" : "platform-whatsapp";
+  };
+
+  const getSourceBadge = (source: string, sourceType?: string) => {
+    if (sourceType === "Override") {
+      return (
+        <div className="flex gap-1">
+          <Badge
+            variant="outline"
+            className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs"
+          >
+            Manual
+          </Badge>
+          <Badge
+            variant="outline"
+            className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs"
+          >
+            Override
+          </Badge>
+        </div>
+      );
+    }
+    return (
+      <Badge
+        variant="outline"
+        className={`text-xs ${
+          source === "API"
+            ? "bg-green-500/20 text-green-400 border-green-500/30"
+            : "bg-orange-500/20 text-orange-400 border-orange-500/30"
+        }`}
+      >
+        {source}
+      </Badge>
+    );
+  };
+
+  const getChangeColor = (isPositive: boolean) => {
+    return isPositive ? "text-green-400" : "text-red-400";
+  };
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="fixed-header-layout">
+      <SidebarInset className="flex flex-col min-h-screen">
         <Header />
-        <div className="scrollable-content flex flex-1 flex-col gap-6 container-padding">
-          {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-9">
-            <div>
-              <h1 className="heading-responsive font-bold font-poppins">
-                Exchange Rates
-              </h1>
-              <p className="text-responsive text-muted-foreground">
-                Manage trading rates for cryptocurrencies and gift cards
-              </p>
-            </div>
-            <Button onClick={() => setIsAddModalOpen(true)} className="w-fit">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Rate
-            </Button>
-          </div>
+        <main className="flex-1 bg-background">
+          <div className="container-padding py-4 md:py-6 lg:py-8 space-y-6">
+            {/* Breadcrumb Navigation */}
+            <div className="flex flex-col space-y-4">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href="/"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Dashboard
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-medium">
+                      Rate Management
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
 
-          {/* Rate History Chart */}
-          <Card className="card-enhanced">
-            <CardHeader>
-              <CardTitle className="font-poppins">
-                Rate History (Last 24 Hours)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  bitcoin: {
-                    label: "Bitcoin",
-                    color: "#f7931a",
-                  },
-                  ethereum: {
-                    label: "Ethereum",
-                    color: "#627eea",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rateHistoryData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      type="monotone"
-                      dataKey="bitcoin"
-                      stroke="var(--color-bitcoin)"
-                      strokeWidth={2}
-                      name="Bitcoin (₦)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="ethereum"
-                      stroke="var(--color-ethereum)"
-                      strokeWidth={2}
-                      name="Ethereum (₦)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search rates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <SearchFilters />
-          </div>
-
-          {/* Rates Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredRates.map((rate) => {
-              const IconComponent = rate.icon;
-              return (
-                <Card key={rate.id} className="card-enhanced">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <IconComponent className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base font-poppins">
-                            {rate.asset}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {rate.symbol}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          rate.platform === "Telegram"
-                            ? "platform-telegram"
-                            : rate.platform === "WhatsApp"
-                            ? "platform-whatsapp"
-                            : ""
-                        }
-                      >
-                        {rate.platform}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Buy Rate
-                        </span>
-                        <span className="font-semibold text-green-600">
-                          {formatCurrency(rate.buyRate)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Sell Rate
-                        </span>
-                        <span className="font-semibold text-blue-600">
-                          {formatCurrency(rate.sellRate)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          24h Change
-                        </span>
-                        <div
-                          className={`flex items-center gap-1 ${getChangeColor(
-                            rate.change
-                          )}`}
-                        >
-                          {getChangeIcon(rate.change)}
-                          <span className="font-semibold">
-                            {rate.change > 0 ? "+" : ""}
-                            {rate.change}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pt-3 border-t">
-                      <div className="flex justify-between items-center text-xs text-muted-foreground">
-                        <span>Last updated: {rate.lastUpdated}</span>
-                        <Badge
-                          variant={
-                            rate.status === "active" ? "default" : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {rate.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {filteredRates.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground">
-                No rates found matching your search.
+              {/* Page Header */}
+              <div className="flex flex-col space-y-2 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                <div className="space-y-1">
+                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-poppins tracking-tight">
+                    Rate Management
+                  </h1>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    Control and monitor exchange rates across platforms
+                  </p>
+                </div>
+                <Button className="bg-blue-600 hover:bg-blue-700 w-fit">
+                  <Sync className="h-4 w-4 mr-2" />
+                  Sync All Rates
+                </Button>
               </div>
             </div>
-          )}
-        </div>
-      </SidebarInset>
 
-      <AddRateModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Total Rates
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Activity className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {statsData.totalRates}
+                  </div>
+                  <div className="flex items-center text-xs text-blue-500">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    <span>Active rates</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Auto Rates
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-green-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {statsData.autoRates}
+                  </div>
+                  <div className="flex items-center text-xs text-green-500">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    <span>Automated</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Manual Override
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Settings className="h-4 w-4 text-purple-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {statsData.manualOverride}
+                  </div>
+                  <div className="flex items-center text-xs text-purple-500">
+                    <Edit className="h-3 w-3 mr-1" />
+                    <span>Manual control</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced hover:shadow-lg transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                    Avg. Accuracy
+                  </CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-emerald-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-xl sm:text-2xl font-bold font-poppins">
+                    {statsData.avgAccuracy}%
+                  </div>
+                  <div className="flex items-center text-xs text-emerald-500">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    <span>High precision</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Rate History Chart */}
+            <Card className="card-enhanced shadow-sm">
+              <CardHeader className="border-b border-border/50">
+                <CardTitle className="text-lg sm:text-xl font-poppins">
+                  Rate History (Last 24 Hours)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ChartContainer
+                  config={{
+                    btc: {
+                      label: "Bitcoin",
+                      color: "#f7931a",
+                    },
+                    eth: {
+                      label: "Ethereum",
+                      color: "#627eea",
+                    },
+                  }}
+                  className="h-[250px] sm:h-[300px] md:h-[350px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={rateHistoryData}
+                      margin={{
+                        top: 5,
+                        right: 10,
+                        left: 10,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="opacity-30"
+                      />
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        className="text-muted-foreground"
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        className="text-muted-foreground"
+                        tickFormatter={(value) =>
+                          `${(value / 1000000).toFixed(0)}M`
+                        }
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                        formatter={(value: any, name: string) => [
+                          `₦${(value / 1000000).toFixed(1)}M`,
+                          name === "btc" ? "Bitcoin" : "Ethereum",
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="btc"
+                        stroke="var(--color-btc)"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "var(--color-btc)" }}
+                        activeDot={{ r: 6, fill: "var(--color-btc)" }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="eth"
+                        stroke="var(--color-eth)"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "var(--color-eth)" }}
+                        activeDot={{ r: 6, fill: "var(--color-eth)" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Exchange Rates Table */}
+            <Card className="card-enhanced shadow-sm">
+              <CardHeader className="border-b border-border/50">
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                  <CardTitle className="text-lg sm:text-xl font-poppins">
+                    Exchange Rates
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="p-4 sm:p-6 space-y-4">
+                  {/* Search and Filters */}
+                  <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 bg-background/50 border-border/50"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-2 sm:pb-0 sm:overflow-x-visible">
+                      <div className="flex items-center gap-2 min-w-max">
+                        <Button
+                          variant="outline"
+                          className="bg-background/50 border-border/50 whitespace-nowrap"
+                        >
+                          <Filter className="h-4 w-4 mr-2" />
+                          Filter
+                        </Button>
+                        {filterOptions.map((filter) => (
+                          <DropdownMenu key={filter.key}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="bg-background/50 border-border/50 whitespace-nowrap"
+                              >
+                                {filter.label}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              {filter.options.map((option) => (
+                                <DropdownMenuItem key={option.value}>
+                                  {option.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="rounded-lg border border-border/50 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30">
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Asset
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Platform
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Source
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Current Rate
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Auto Margin
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              24H Change
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Accuracy
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Last Synced
+                            </TableHead>
+                            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {exchangeRatesData.map((rate) => (
+                            <TableRow
+                              key={rate.id}
+                              className="hover:bg-muted/20"
+                            >
+                              <TableCell className="font-medium">
+                                {rate.asset}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${getPlatformBadgeClass(
+                                    rate.platform
+                                  )}`}
+                                >
+                                  {rate.platform}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {getSourceBadge(rate.source, rate.sourceType)}
+                              </TableCell>
+                              <TableCell className="font-mono font-medium">
+                                {rate.currentRate}
+                              </TableCell>
+                              <TableCell className="text-green-400 font-medium">
+                                {rate.autoMargin}
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className={getChangeColor(
+                                    rate.changePositive
+                                  )}
+                                >
+                                  {rate.change24h}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-green-400 font-medium">
+                                {rate.accuracy}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground font-mono">
+                                {rate.lastSynced}
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit Rate
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      <RefreshCw className="h-4 w-4 mr-2" />
+                                      Sync Now
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-red-600">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

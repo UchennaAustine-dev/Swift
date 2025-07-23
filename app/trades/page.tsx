@@ -12,6 +12,7 @@ import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import type { Trade } from "@/lib/types";
 import { TradeModal } from "@/components/modals/trade-modal";
+// import SearchFilters from "@/components/ui/search-filters";
 
 // Mock trade data
 const mockTrades: Trade[] = [

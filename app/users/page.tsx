@@ -30,6 +30,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import type { User } from "@/lib/types";
+// import SearchFilters from "@/components/ui/search-filters";
 
 // Mock user data matching the design
 const mockUsers: User[] = [

@@ -32,7 +32,7 @@ export interface SearchFiltersProps {
   onClearFilters?: () => void;
   className?: string;
   showDateFilter?: boolean;
-  dateRange?: { from: string; to: string }; // e.g. ISO date strings
+  dateRange?: { from: string; to: string };
   onDateRangeChange?: (range: { from: string; to: string }) => void;
 }
 
@@ -123,139 +123,140 @@ export function SearchFilters({
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2">
-        {availableFilters.map((filter) =>
-          filter.key === "date" ? (
-            <DropdownMenu
-              key="date"
-              onOpenChange={setIsDateMenuOpen}
-              open={isDateMenuOpen}
-            >
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "bg-background/50 border-border/50",
-                    (dateRange?.from || dateRange?.to) &&
-                      "bg-primary/10 border-primary/30"
-                  )}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  {formatDateLabel()}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-4 space-y-2">
-                <label className="flex flex-col text-sm">
-                  From
-                  <input
-                    type="date"
-                    className="mt-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm outline-none"
-                    value={dateRange?.from || ""}
-                    onChange={(e) =>
-                      onDateRangeChange?.({
-                        from: e.target.value,
-                        to: dateRange?.to || "",
-                      })
-                    }
-                  />
-                </label>
-                <label className="flex flex-col text-sm">
-                  To
-                  <input
-                    type="date"
-                    className="mt-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm outline-none"
-                    value={dateRange?.to || ""}
-                    onChange={(e) =>
-                      onDateRangeChange?.({
-                        from: dateRange?.from || "",
-                        to: e.target.value,
-                      })
-                    }
-                  />
-                </label>
-                {(dateRange?.from || dateRange?.to) && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="cursor-pointer text-muted-foreground"
-                      onSelect={() => {
-                        onDateRangeChange?.({ from: "", to: "" });
-                        setIsDateMenuOpen(false);
-                      }}
-                    >
-                      Clear date range filter
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <DropdownMenu key={filter.key}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "bg-background/50 border-border/50",
-                    activeFilters[filter.key] &&
-                      "bg-primary/10 border-primary/30"
-                  )}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  {activeFilters[filter.key]
-                    ? filter.options.find(
-                        (opt) => opt.value === activeFilters[filter.key]
-                      )?.label || filter.label
-                    : filter.label}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {filter.options.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() =>
-                      handleFilterSelect(filter.key, option.value)
-                    }
+      {/* Filters - Horizontally scrollable on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-2 sm:pb-0 sm:overflow-x-visible">
+        <div className="flex items-center gap-2 min-w-max">
+          {availableFilters.map((filter) =>
+            filter.key === "date" ? (
+              <DropdownMenu
+                key="date"
+                onOpenChange={setIsDateMenuOpen}
+                open={isDateMenuOpen}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
                     className={cn(
-                      "cursor-pointer",
-                      activeFilters[filter.key] === option.value &&
-                        "bg-primary/10"
+                      "bg-background/50 border-border/50 whitespace-nowrap",
+                      (dateRange?.from || dateRange?.to) &&
+                        "bg-primary/10 border-primary/30"
                     )}
                   >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-                {activeFilters[filter.key] && (
-                  <>
-                    <DropdownMenuSeparator />
+                    <Filter className="h-4 w-4 mr-2" />
+                    {formatDateLabel()}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-4 space-y-2">
+                  <label className="flex flex-col text-sm">
+                    From
+                    <input
+                      type="date"
+                      className="mt-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm outline-none"
+                      value={dateRange?.from || ""}
+                      onChange={(e) =>
+                        onDateRangeChange?.({
+                          from: e.target.value,
+                          to: dateRange?.to || "",
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col text-sm">
+                    To
+                    <input
+                      type="date"
+                      className="mt-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm outline-none"
+                      value={dateRange?.to || ""}
+                      onChange={(e) =>
+                        onDateRangeChange?.({
+                          from: dateRange?.from || "",
+                          to: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                  {(dateRange?.from || dateRange?.to) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-muted-foreground"
+                        onSelect={() => {
+                          onDateRangeChange?.({ from: "", to: "" });
+                          setIsDateMenuOpen(false);
+                        }}
+                      >
+                        Clear date range filter
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <DropdownMenu key={filter.key}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "bg-background/50 border-border/50 whitespace-nowrap",
+                      activeFilters[filter.key] &&
+                        "bg-primary/10 border-primary/30"
+                    )}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    {activeFilters[filter.key]
+                      ? filter.options.find(
+                          (opt) => opt.value === activeFilters[filter.key]
+                        )?.label || filter.label
+                      : filter.label}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {filter.options.map((option) => (
                     <DropdownMenuItem
-                      onSelect={() => handleClearFilter(filter.key)}
-                      className="cursor-pointer text-muted-foreground"
+                      key={option.value}
+                      onSelect={() =>
+                        handleFilterSelect(filter.key, option.value)
+                      }
+                      className={cn(
+                        "cursor-pointer",
+                        activeFilters[filter.key] === option.value &&
+                          "bg-primary/10"
+                      )}
                     >
-                      Clear filter
+                      {option.label}
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        )}
-
-        {/* Clear All Filters */}
-        {activeFilterCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              onClearFilters?.();
-              onDateRangeChange?.({ from: "", to: "" });
-            }}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Clear ({activeFilterCount})
-          </Button>
-        )}
+                  ))}
+                  {activeFilters[filter.key] && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => handleClearFilter(filter.key)}
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        Clear filter
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          )}
+          {/* Clear All Filters */}
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onClearFilters?.();
+                onDateRangeChange?.({ from: "", to: "" });
+              }}
+              className="text-muted-foreground hover:text-foreground whitespace-nowrap"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear ({activeFilterCount})
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Active Filters Display (hidden on sm and above) */}
