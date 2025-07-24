@@ -40,7 +40,13 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
-          <Toaster />
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            expand={false}
+            duration={4000}
+          />
         </ThemeProvider>
       </body>
     </html>

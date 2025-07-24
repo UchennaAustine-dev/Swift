@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,10 +26,11 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import type { APIConfig } from "@/lib/types";
 
-interface AddCryptoAPIModalProps {
+interface EditCryptoAPIModalProps {
+  api: APIConfig | null;
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (api: Omit<APIConfig, "id">) => void;
+  onUpdate: (api: APIConfig) => void;
 }
 
 const CRYPTO_ASSETS = [
@@ -47,49 +48,50 @@ const CRYPTO_ASSETS = [
   "Chainlink",
 ];
 
-export function AddCryptoAPIModal({
+export function EditCryptoAPIModal({
+  api,
   isOpen,
   onClose,
-  onAdd,
-}: AddCryptoAPIModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "crypto" as const,
-    status: "active" as const,
-    priority: 1,
-    autoMargin: 2.0,
-    supportedAssets: [] as string[],
-    apiKey: "",
-    rateLimit: "",
-    notes: "",
-  });
+  onUpdate,
+}: EditCryptoAPIModalProps) {
+  const [formData, setFormData] = useState<Partial<APIConfig>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (api) {
+      setFormData(api);
+    }
+  }, [api]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "API name is required";
     }
 
-    if (!formData.apiKey.trim()) {
+    if (!formData.apiKey?.trim()) {
       newErrors.apiKey = "API key is required";
     }
 
-    if (!formData.rateLimit.trim()) {
+    if (!formData.rateLimit?.trim()) {
       newErrors.rateLimit = "Rate limit is required";
     }
 
-    if (formData.supportedAssets.length === 0) {
+    if (!formData.supportedAssets?.length) {
       newErrors.supportedAssets = "At least one supported asset is required";
     }
 
-    if (formData.priority < 1 || formData.priority > 10) {
+    if (!formData.priority || formData.priority < 1 || formData.priority > 10) {
       newErrors.priority = "Priority must be between 1 and 10";
     }
 
-    if (formData.autoMargin < 0 || formData.autoMargin > 10) {
+    if (
+      formData.autoMargin === undefined ||
+      formData.autoMargin < 0 ||
+      formData.autoMargin > 10
+    ) {
       newErrors.autoMargin = "Auto margin must be between 0 and 10";
     }
 
@@ -100,7 +102,7 @@ export function AddCryptoAPIModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !api) {
       toast.error("Validation Error", {
         description: "Please fix the errors in the form.",
       });
@@ -113,19 +115,17 @@ export function AddCryptoAPIModal({
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const newAPI: Omit<APIConfig, "id"> = {
+      const updatedAPI: APIConfig = {
+        ...api,
         ...formData,
         lastSync: new Date().toISOString(),
-        errorCount: 0,
-        uptime: 100,
-        responseTime: 0,
-      };
+      } as APIConfig;
 
-      onAdd(newAPI);
+      onUpdate(updatedAPI);
       handleClose();
     } catch (error) {
       toast.error("Error", {
-        description: "Failed to add crypto API. Please try again.",
+        description: "Failed to update crypto API. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -133,26 +133,16 @@ export function AddCryptoAPIModal({
   };
 
   const handleClose = () => {
-    setFormData({
-      name: "",
-      type: "crypto",
-      status: "active",
-      priority: 1,
-      autoMargin: 2.0,
-      supportedAssets: [],
-      apiKey: "",
-      rateLimit: "",
-      notes: "",
-    });
+    setFormData({});
     setErrors({});
     onClose();
   };
 
   const addSupportedAsset = (asset: string) => {
-    if (!formData.supportedAssets.includes(asset)) {
+    if (!formData.supportedAssets?.includes(asset)) {
       setFormData((prev) => ({
         ...prev,
-        supportedAssets: [...prev.supportedAssets, asset],
+        supportedAssets: [...(prev.supportedAssets || []), asset],
       }));
     }
   };
@@ -160,17 +150,19 @@ export function AddCryptoAPIModal({
   const removeSupportedAsset = (asset: string) => {
     setFormData((prev) => ({
       ...prev,
-      supportedAssets: prev.supportedAssets.filter((a) => a !== asset),
+      supportedAssets: prev.supportedAssets?.filter((a) => a !== asset) || [],
     }));
   };
+
+  if (!api) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Crypto API</DialogTitle>
+          <DialogTitle>Edit Crypto API</DialogTitle>
           <DialogDescription>
-            Configure a new cryptocurrency API source for price data.
+            Update the configuration for {api.name}.
           </DialogDescription>
         </DialogHeader>
 
@@ -181,7 +173,7 @@ export function AddCryptoAPIModal({
               <Input
                 id="name"
                 placeholder="e.g., CoinGecko"
-                value={formData.name}
+                value={formData.name || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
@@ -199,7 +191,7 @@ export function AddCryptoAPIModal({
                 type="number"
                 min="1"
                 max="10"
-                value={formData.priority}
+                value={formData.priority || 1}
                 onChange={(e) =>
                   setFormData({ ...formData, priority: Number(e.target.value) })
                 }
@@ -221,7 +213,7 @@ export function AddCryptoAPIModal({
                 id="apiKey"
                 type="password"
                 placeholder="Enter API key"
-                value={formData.apiKey}
+                value={formData.apiKey || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, apiKey: e.target.value })
                 }
@@ -237,7 +229,7 @@ export function AddCryptoAPIModal({
               <Input
                 id="rateLimit"
                 placeholder="e.g., 50/minute"
-                value={formData.rateLimit}
+                value={formData.rateLimit || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, rateLimit: e.target.value })
                 }
@@ -257,7 +249,7 @@ export function AddCryptoAPIModal({
               min="0"
               max="10"
               step="0.1"
-              value={formData.autoMargin}
+              value={formData.autoMargin || 0}
               onChange={(e) =>
                 setFormData({ ...formData, autoMargin: Number(e.target.value) })
               }
@@ -279,7 +271,7 @@ export function AddCryptoAPIModal({
               </SelectTrigger>
               <SelectContent>
                 {CRYPTO_ASSETS.filter(
-                  (asset) => !formData.supportedAssets.includes(asset)
+                  (asset) => !formData.supportedAssets?.includes(asset)
                 ).map((asset) => (
                   <SelectItem key={asset} value={asset}>
                     {asset}
@@ -288,28 +280,29 @@ export function AddCryptoAPIModal({
               </SelectContent>
             </Select>
 
-            {formData.supportedAssets.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.supportedAssets.map((asset) => (
-                  <Badge
-                    key={asset}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {asset}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-transparent"
-                      onClick={() => removeSupportedAsset(asset)}
+            {formData.supportedAssets &&
+              formData.supportedAssets.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.supportedAssets.map((asset) => (
+                    <Badge
+                      key={asset}
+                      variant="secondary"
+                      className="flex items-center gap-1"
                     >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            )}
+                      {asset}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        onClick={() => removeSupportedAsset(asset)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             {errors.supportedAssets && (
               <p className="text-sm text-red-500">{errors.supportedAssets}</p>
             )}
@@ -320,7 +313,7 @@ export function AddCryptoAPIModal({
             <Textarea
               id="notes"
               placeholder="Additional notes about this API source..."
-              value={formData.notes}
+              value={formData.notes || ""}
               onChange={(e) =>
                 setFormData({ ...formData, notes: e.target.value })
               }
@@ -333,7 +326,7 @@ export function AddCryptoAPIModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Crypto API"}
+              {isLoading ? "Updating..." : "Update Crypto API"}
             </Button>
           </DialogFooter>
         </form>

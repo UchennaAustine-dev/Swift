@@ -30,9 +30,12 @@ export interface User {
 // }
 
 export interface Trade {
-  readonly id: string;
+  id: string;
   userId: string;
-  user: { username: string; platform: "telegram" | "whatsapp" };
+  user: {
+    username: string;
+    platform: "telegram" | "whatsapp";
+  };
   assetType: string;
   amount: string;
   status:
@@ -42,27 +45,30 @@ export interface Trade {
     | "paid"
     | "completed"
     | "cancelled";
-  rate?: number;
-  payout?: number;
-  readonly createdAt: string;
-  readonly updatedAt: string;
+  rate: number;
+  payout: number;
+  createdAt: string;
+  updatedAt: string;
   flags: string[];
-  adminNotes?: string;
+  notes?: string;
 }
 
-// export interface APISource {
-//   readonly id: string;
-//   name: string;
-//   sourceUrl: string;
-//   type: "gift_card" | "crypto";
-//   supportedAssets: string[];
-//   status: "active" | "down";
-//   uptime: number;
-//   lastSync: string;
-//   errorCount: number;
-//   priority: number;
-//   autoMargin?: number;
-// }
+export interface APISource {
+  id: string;
+  name: string;
+  sourceUrl: string;
+  type: "gift_card";
+  supportedAssets: string[];
+  status: "active" | "down";
+  uptime: number;
+  lastSync: string;
+  errorCount: number;
+  priority: number;
+  apiKey?: string;
+  rateLimit?: string;
+  responseTime?: number;
+  notes?: string;
+}
 
 export interface Rate {
   readonly id: string;
@@ -121,14 +127,18 @@ export type ApiResponse<T> = {
 };
 
 export interface APIConfig {
-  readonly id: string;
+  id: string;
   name: string;
-  type: "crypto" | "gift_card";
+  type: "crypto";
   status: "active" | "inactive" | "error";
   priority: number;
-  autoMargin?: number;
+  autoMargin: number;
   supportedAssets: string[];
-  lastSync?: string;
+  lastSync: string;
   errorCount: number;
   uptime: number;
+  apiKey?: string;
+  rateLimit?: string;
+  responseTime?: number;
+  notes?: string;
 }
