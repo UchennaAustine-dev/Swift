@@ -160,39 +160,39 @@
     @apply p-3 sm:p-4 md:p-6;
   }
 
-  /* Enhanced cards - no transparency */
+  /* Enhanced cards - completely solid, no transparency */
   .card-enhanced {
     @apply bg-card text-card-foreground rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200;
   }
 
-  /* Status indicators */
+  /* Status indicators - solid backgrounds */
   .status-active {
-    @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800;
+    @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800;
   }
   .status-inactive {
-    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800;
+    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800;
   }
   .status-pending {
-    @apply bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800;
+    @apply bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800;
   }
 
-  /* Platform badges */
+  /* Platform badges - solid backgrounds */
   .platform-telegram {
-    @apply bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800;
+    @apply bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800;
   }
   .platform-whatsapp {
-    @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800;
+    @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800;
   }
 
-  /* Asset type badges */
+  /* Asset type badges - solid backgrounds */
   .asset-crypto {
-    @apply bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800;
+    @apply bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800;
   }
   .asset-giftcard {
-    @apply bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800;
+    @apply bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800;
   }
 
-  /* Mobile optimizations */
+  /* Mobile optimizations - solid backgrounds */
   .mobile-card {
     @apply p-3 sm:p-4 space-y-3 border border-border rounded-lg bg-card;
   }
@@ -269,7 +269,7 @@
   }
 }
 
-/* Ensure proper background colors for components */
+/* Ensure proper solid background colors for all components */
 .bg-sidebar {
   background-color: hsl(var(--sidebar)) !important;
 }
@@ -282,7 +282,54 @@
   background-color: hsl(var(--card)) !important;
 }
 
-/* Fix any potential transparency issues */
+.bg-popover {
+  background-color: hsl(var(--popover)) !important;
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Remove any potential transparency from dropdowns and popovers */
+[data-radix-popper-content-wrapper] {
+  background-color: hsl(var(--popover)) !important;
+}
+
+/* Ensure all dropdown menus have solid backgrounds */
+[role="menu"] {
+  background-color: hsl(var(--popover)) !important;
+}
+
+/* Fix any potential transparency issues in sidebar */
 .sidebar-provider * {
   background-color: inherit;
+}
+
+/* Ensure input backgrounds are solid */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Ensure button backgrounds are solid */
+button[data-state="open"] {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Remove transparency from any remaining elements */
+.opacity-50 {
+  opacity: 1 !important;
+}
+
+/* Ensure all cards and containers have solid backgrounds */
+.card,
+.card-enhanced,
+[data-radix-dialog-content],
+[data-radix-popover-content] {
+  background-color: hsl(var(--card)) !important;
 }

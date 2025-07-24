@@ -418,7 +418,7 @@ export function SearchFilters({
           placeholder={searchPlaceholder}
           value={localSearchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-9 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50"
+          className="pl-9 bg-background border-border focus:bg-background focus:border-primary"
         />
       </div>
 
@@ -436,9 +436,9 @@ export function SearchFilters({
                   <Button
                     variant="outline"
                     className={cn(
-                      "bg-background/50 border-border/50 whitespace-nowrap hover:bg-muted focus:bg-muted",
+                      "bg-background border-border whitespace-nowrap hover:bg-muted focus:bg-muted",
                       (dateRange?.from || dateRange?.to) &&
-                        "bg-primary/10 border-primary/30"
+                        "bg-primary/10 border-primary text-primary"
                     )}
                   >
                     <Filter className="h-4 w-4 mr-2" />
@@ -447,13 +447,13 @@ export function SearchFilters({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-64 p-4 space-y-2 bg-popover border border-border shadow-md"
+                  className="w-64 p-4 space-y-2 bg-popover border border-border shadow-lg"
                 >
                   <label className="flex flex-col text-sm">
                     From
                     <input
                       type="date"
-                      className="mt-1 rounded border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary/50"
+                      className="mt-1 rounded border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                       value={dateRange?.from || ""}
                       onChange={(e) =>
                         onDateRangeChange?.({
@@ -467,7 +467,7 @@ export function SearchFilters({
                     To
                     <input
                       type="date"
-                      className="mt-1 rounded border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary/50"
+                      className="mt-1 rounded border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                       value={dateRange?.to || ""}
                       onChange={(e) =>
                         onDateRangeChange?.({
@@ -499,9 +499,9 @@ export function SearchFilters({
                   <Button
                     variant="outline"
                     className={cn(
-                      "bg-background/50 border-border/50 whitespace-nowrap hover:bg-muted focus:bg-muted",
+                      "bg-background border-border whitespace-nowrap hover:bg-muted focus:bg-muted",
                       activeFilters[filter.key] &&
-                        "bg-primary/10 border-primary/30"
+                        "bg-primary/10 border-primary text-primary"
                     )}
                   >
                     <Filter className="h-4 w-4 mr-2" />
@@ -514,7 +514,7 @@ export function SearchFilters({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48 bg-popover border border-border shadow-md"
+                  className="w-48 bg-popover border border-border shadow-lg"
                 >
                   {filter.options.map((option) => (
                     <DropdownMenuItem
@@ -525,7 +525,7 @@ export function SearchFilters({
                       className={cn(
                         "cursor-pointer hover:bg-muted focus:bg-muted",
                         activeFilters[filter.key] === option.value &&
-                          "bg-primary/10"
+                          "bg-primary/10 text-primary"
                       )}
                     >
                       {option.label}
