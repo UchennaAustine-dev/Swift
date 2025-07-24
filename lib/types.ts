@@ -95,25 +95,25 @@ export interface DashboardMetrics {
   flaggedUsers: number;
 }
 
-export interface SupportRequest {
-  readonly id: string;
-  user: string;
-  issueType: string;
-  severity: "low" | "medium" | "high" | "critical";
-  status: "open" | "in_progress" | "resolved" | "escalated";
-  assignedTo: string;
-  readonly created: string;
-  description: string;
-}
+// export interface SupportRequest {
+//   readonly id: string;
+//   user: string;
+//   issueType: string;
+//   severity: "low" | "medium" | "high" | "critical";
+//   status: "open" | "in_progress" | "resolved" | "escalated";
+//   assignedTo: string;
+//   readonly created: string;
+//   description: string;
+// }
 
-export interface Alert {
-  readonly id: string;
-  type: "critical" | "high" | "medium" | "low";
-  message: string;
-  timestamp: string;
-  status: "active" | "resolved";
-  source: string;
-}
+// export interface Alert {
+//   readonly id: string;
+//   type: "critical" | "high" | "medium" | "low";
+//   message: string;
+//   timestamp: string;
+//   status: "active" | "resolved";
+//   source: string;
+// }
 
 export type ApiResponse<T> = {
   data: T;
@@ -141,4 +141,39 @@ export interface APIConfig {
   rateLimit?: string;
   responseTime?: number;
   notes?: string;
+}
+
+export interface SupportRequest {
+  id: string;
+  user: string;
+  issueType: string;
+  severity: "critical" | "high" | "medium" | "low";
+  status: "open" | "in_progress" | "resolved" | "escalated";
+  assignedTo: string;
+  created: string;
+  description: string;
+}
+
+export interface Alert {
+  id: string;
+  type: "critical" | "high" | "medium" | "low";
+  message: string;
+  timestamp: string;
+  status: "active" | "resolved";
+  source: string;
+}
+
+export interface Payout {
+  readonly id: string;
+  payoutId: string;
+  tradeId: string;
+  userId: string;
+  user: { username: string; platform: "telegram" | "whatsapp" };
+  amount: number;
+  currency: "NGN";
+  method: "bank" | "wallet";
+  status: "pending" | "paid" | "failed";
+  processedBy: "auto" | string;
+  failureReason?: string;
+  readonly createdAt: string;
 }

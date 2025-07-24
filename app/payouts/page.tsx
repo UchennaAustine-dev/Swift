@@ -13,25 +13,15 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Payout {
-  readonly id: string;
-  payoutId: string;
-  tradeId: string;
-  userId: string;
-  user: { username: string; platform: "telegram" | "whatsapp" };
-  amount: number;
-  currency: "NGN";
-  method: "bank" | "wallet";
-  status: "pending" | "paid" | "failed";
-  processedBy: "auto" | string;
-  failureReason?: string;
-  readonly createdAt: string;
-}
+import { PayoutDetailsModal } from "@/components/modals/payout-details-modal";
+import type { Payout } from "@/lib/types";
+import { toast } from "sonner";
 
 // Mock payout data
 const mockPayouts: Payout[] = [
@@ -101,6 +91,28 @@ const mockPayouts: Payout[] = [
     processedBy: "sarah_admin",
     createdAt: "2024-01-20T20:10:00Z",
   },
+  // Add more mock data for pagination testing
+  ...Array.from({ length: 20 }, (_, i) => ({
+    id: `${i + 6}`,
+    payoutId: `P${String(i + 6).padStart(3, "0")}`,
+    tradeId: `TXN${String(i + 6).padStart(3, "0")}`,
+    userId: `${i + 6}`,
+    user: {
+      username: `@user${i + 6}`,
+      platform: i % 2 === 0 ? ("telegram" as const) : ("whatsapp" as const),
+    },
+    amount: Math.floor(Math.random() * 1000000) + 50000,
+    currency: "NGN" as const,
+    method: i % 2 === 0 ? ("bank" as const) : ("wallet" as const),
+    status: ["pending", "paid", "failed"][Math.floor(Math.random() * 3)] as
+      | "pending"
+      | "paid"
+      | "failed",
+    processedBy: i % 3 === 0 ? "auto" : `admin_${i}`,
+    createdAt: new Date(
+      Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
+    ).toISOString(),
+  })),
 ];
 
 const filterOptions = [
@@ -131,22 +143,38 @@ const filterOptions = [
   },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function PayoutsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(
     {}
   );
-  // Updated: use string dates for dateRange state
   const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
     from: "",
     to: "",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [payouts, setPayouts] = useState(mockPayouts);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Debounced search
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useMemo(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const filteredPayouts = useMemo(() => {
-    return mockPayouts.filter((payout) => {
+    return payouts.filter((payout) => {
       // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         if (
           !payout.payoutId.toLowerCase().includes(query) &&
           !payout.tradeId.toLowerCase().includes(query) &&
@@ -156,7 +184,7 @@ export default function PayoutsPage() {
         }
       }
 
-      // Date range filter (parse string dates before comparing)
+      // Date range filter
       if (dateRange.from || dateRange.to) {
         const payoutDate = new Date(payout.createdAt);
         if (dateRange.from && payoutDate < new Date(dateRange.from)) {
@@ -195,24 +223,122 @@ export default function PayoutsPage() {
 
       return true;
     });
-  }, [searchQuery, activeFilters, dateRange]);
+  }, [payouts, debouncedSearchQuery, activeFilters, dateRange]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredPayouts.length / ITEMS_PER_PAGE);
+  const paginatedPayouts = filteredPayouts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleFilterChange = (key: string, value: string) => {
     setActiveFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleClearFilters = () => {
     setActiveFilters({});
     setSearchQuery("");
+    setDebouncedSearchQuery("");
     setDateRange({ from: "", to: "" });
+    setCurrentPage(1);
   };
 
-  // Updated: accept string dates
   const handleDateRangeChange = (range: { from: string; to: string }) => {
     setDateRange(range);
+    setCurrentPage(1);
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Simulate export process
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Create CSV content
+      const headers = [
+        "Payout ID",
+        "Trade ID",
+        "User",
+        "Amount",
+        "Method",
+        "Status",
+        "Processed By",
+        "Created",
+      ];
+      const csvContent = [
+        headers.join(","),
+        ...filteredPayouts.map((payout) =>
+          [
+            payout.payoutId,
+            payout.tradeId,
+            payout.user.username,
+            `${payout.currency}${payout.amount}`,
+            payout.method,
+            payout.status,
+            payout.processedBy,
+            new Date(payout.createdAt).toLocaleString(),
+          ].join(",")
+        ),
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payouts-export-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${filteredPayouts.length} payouts to CSV`);
+    } catch (error) {
+      toast.error("Failed to export payouts. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleViewDetails = (payout: Payout) => {
+    setSelectedPayout(payout);
+    setIsModalOpen(true);
+  };
+
+  const handleRetryPayment = (id: string) => {
+    setPayouts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, status: "pending" as const } : p))
+    );
+    toast.success("The payment has been queued for retry");
+  };
+
+  const handleMarkAsPaid = (id: string) => {
+    setPayouts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, status: "paid" as const } : p))
+    );
+    toast.success("The payout status has been updated");
+  };
+
+  const handleCancelPayout = (id: string) => {
+    setPayouts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              status: "failed" as const,
+              failureReason: "Cancelled by admin",
+            }
+          : p
+      )
+    );
+    toast.success("The payout has been cancelled");
   };
 
   const columns = [
@@ -262,7 +388,7 @@ export default function PayoutsPage() {
       render: (value: number, row: Payout) => (
         <span className="font-mono font-semibold">
           {row.currency}
-          {value.toLocaleString()}
+          {new Intl.NumberFormat("en-NG").format(value)}
         </span>
       ),
     },
@@ -314,7 +440,19 @@ export default function PayoutsPage() {
     {
       key: "createdAt",
       label: "Created",
-      render: (value: string) => new Date(value).toLocaleString(),
+      render: (value: string) => {
+        const date = new Date(value);
+        const now = new Date();
+        const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+          return `${Math.floor(diffInHours)}h ago`;
+        } else if (diffInHours < 168) {
+          return `${Math.floor(diffInHours / 24)}d ago`;
+        } else {
+          return date.toLocaleDateString();
+        }
+      },
       className: "text-muted-foreground text-sm",
     },
   ];
@@ -322,20 +460,23 @@ export default function PayoutsPage() {
   const actions = [
     {
       label: "View Details",
-      onClick: (payout: Payout) => console.log("View", payout.id),
+      onClick: handleViewDetails,
     },
     {
       label: "Retry Payment",
-      onClick: (payout: Payout) => console.log("Retry", payout.id),
+      onClick: (payout: Payout) => handleRetryPayment(payout.id),
+      condition: (payout: Payout) => payout.status === "failed",
     },
     {
       label: "Mark as Paid",
-      onClick: (payout: Payout) => console.log("Mark Paid", payout.id),
+      onClick: (payout: Payout) => handleMarkAsPaid(payout.id),
+      condition: (payout: Payout) => payout.status === "pending",
     },
     {
       label: "Cancel",
-      onClick: (payout: Payout) => console.log("Cancel", payout.id),
+      onClick: (payout: Payout) => handleCancelPayout(payout.id),
       variant: "destructive" as const,
+      condition: (payout: Payout) => payout.status !== "paid",
     },
   ];
 
@@ -365,7 +506,6 @@ export default function PayoutsPage() {
           {payout.status.charAt(0).toUpperCase() + payout.status.slice(1)}
         </Badge>
       </div>
-
       <div className="flex items-center gap-3">
         <Avatar className="h-8 w-8">
           <AvatarFallback>
@@ -386,12 +526,10 @@ export default function PayoutsPage() {
           </Badge>
         </div>
       </div>
-
       <div className="text-xl font-mono font-bold">
         {payout.currency}
-        {payout.amount.toLocaleString()}
+        {new Intl.NumberFormat("en-NG").format(payout.amount)}
       </div>
-
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
           <span className="text-muted-foreground">Trade ID:</span>
@@ -414,11 +552,23 @@ export default function PayoutsPage() {
         <div>
           <span className="text-muted-foreground">Created:</span>
           <div className="text-sm">
-            {new Date(payout.createdAt).toLocaleDateString()}
+            {(() => {
+              const date = new Date(payout.createdAt);
+              const now = new Date();
+              const diffInHours =
+                (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+              if (diffInHours < 24) {
+                return `${Math.floor(diffInHours)}h ago`;
+              } else if (diffInHours < 168) {
+                return `${Math.floor(diffInHours / 24)}d ago`;
+              } else {
+                return date.toLocaleDateString();
+              }
+            })()}
           </div>
         </div>
       </div>
-
       {payout.failureReason && (
         <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-md">
           <span className="text-sm text-red-600 dark:text-red-400">
@@ -429,12 +579,12 @@ export default function PayoutsPage() {
     </div>
   );
 
-  const totalAmount = mockPayouts.reduce((acc, p) => acc + p.amount, 0);
-  const paidAmount = mockPayouts
+  const totalAmount = payouts.reduce((acc, p) => acc + p.amount, 0);
+  const paidAmount = payouts
     .filter((p) => p.status === "paid")
     .reduce((acc, p) => acc + p.amount, 0);
-  const pendingCount = mockPayouts.filter((p) => p.status === "pending").length;
-  const failedCount = mockPayouts.filter((p) => p.status === "failed").length;
+  const pendingCount = payouts.filter((p) => p.status === "pending").length;
+  const failedCount = payouts.filter((p) => p.status === "failed").length;
 
   return (
     <SidebarProvider>
@@ -463,10 +613,10 @@ export default function PayoutsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold font-mono">
-                    ₦{totalAmount.toLocaleString()}
+                    ₦{new Intl.NumberFormat("en-NG").format(totalAmount)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {mockPayouts.length} transactions
+                    {payouts.length} transactions
                   </p>
                 </CardContent>
               </Card>
@@ -479,7 +629,7 @@ export default function PayoutsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold font-mono">
-                    ₦{paidAmount.toLocaleString()}
+                    ₦{new Intl.NumberFormat("en-NG").format(paidAmount)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {((paidAmount / totalAmount) * 100).toFixed(1)}% of total
@@ -525,27 +675,103 @@ export default function PayoutsPage() {
                 onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
-              <Button className="sm:ml-4">
+              <Button
+                className="sm:ml-4"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                {isExporting ? "Exporting..." : "Export"}
               </Button>
             </div>
 
             <MobileTable
               columns={columns}
-              data={filteredPayouts}
+              data={paginatedPayouts}
               actions={actions}
               mobileCardRender={mobileCardRender}
               emptyMessage="No payouts found matching your criteria."
             />
 
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div>
-                Showing {filteredPayouts.length} of {mockPayouts.length} payouts
+            {/* Pagination */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredPayouts.length)}{" "}
+                of {filteredPayouts.length} payouts
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            currentPage === pageNum ? "default" : "outline"
+                          }
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => setCurrentPage(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        <PayoutDetailsModal
+          payout={selectedPayout}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPayout(null);
+          }}
+          onRetry={handleRetryPayment}
+          onMarkPaid={handleMarkAsPaid}
+          onCancel={handleCancelPayout}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

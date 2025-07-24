@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
@@ -19,6 +19,24 @@ import {
 import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { SystemLogDetailsModal } from "@/components/modals/system-log-details-modal";
+import { toast } from "sonner";
 
 interface SystemLog {
   readonly id: string;
@@ -142,17 +160,34 @@ const filterOptions = [
   },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function SystemLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(
     {}
   );
+  const [isExporting, setIsExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Debounced search
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const filteredLogs = useMemo(() => {
     return mockSystemLogs.filter((log) => {
       // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         if (
           !log.action.toLowerCase().includes(query) &&
           !log.description.toLowerCase().includes(query) &&
@@ -174,22 +209,80 @@ export default function SystemLogsPage() {
 
       return true;
     });
-  }, [searchQuery, activeFilters]);
+  }, [debouncedSearchQuery, activeFilters]);
 
-  const handleFilterChange = (key: string, value: string) => {
+  // Pagination
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, activeFilters]);
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setActiveFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
-  };
+  }, []);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setActiveFilters({});
     setSearchQuery("");
-  };
+  }, []);
 
-  const handleExport = () => {
-    console.log("Exporting system logs...");
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Simulate export process
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Create CSV content
+      const headers = [
+        "Timestamp",
+        "Category",
+        "Action",
+        "Description",
+        "User",
+        "IP Address",
+        "Severity",
+      ];
+      const csvContent = [
+        headers.join(","),
+        ...filteredLogs.map((log) =>
+          [
+            log.timestamp,
+            log.category,
+            log.action,
+            `"${log.description.replace(/"/g, '""')}"`,
+            log.username || "System",
+            log.ipAddress || "N/A",
+            log.severity,
+          ].join(",")
+        ),
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `system-logs-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("System logs exported successfully");
+    } catch (error) {
+      toast.error("Failed to export system logs");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -226,14 +319,31 @@ export default function SystemLogsPage() {
     }
   };
 
+  const getRelativeTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
   const columns = [
     {
       key: "timestamp",
       label: "Time",
       render: (value: string) => (
-        <span className="font-mono text-sm">
-          {new Date(value).toLocaleString()}
-        </span>
+        <div className="font-mono text-sm">
+          <div>{getRelativeTime(value)}</div>
+          <div className="text-muted-foreground text-xs">
+            {new Date(value).toLocaleString()}
+          </div>
+        </div>
       ),
     },
     {
@@ -309,15 +419,24 @@ export default function SystemLogsPage() {
   const actions = [
     {
       label: "View Details",
-      onClick: (log: SystemLog) => console.log("View", log.id),
+      onClick: (log: SystemLog) => {
+        setSelectedLog(log);
+        setIsModalOpen(true);
+      },
     },
     {
       label: "View Metadata",
-      onClick: (log: SystemLog) => console.log("Metadata", log.metadata),
+      onClick: (log: SystemLog) => {
+        setSelectedLog(log);
+        setIsModalOpen(true);
+      },
     },
     {
       label: "Copy Log ID",
-      onClick: (log: SystemLog) => navigator.clipboard.writeText(log.id),
+      onClick: (log: SystemLog) => {
+        navigator.clipboard.writeText(log.id);
+        toast.success("Log ID copied to clipboard");
+      },
     },
   ];
 
@@ -339,15 +458,12 @@ export default function SystemLogsPage() {
           {log.severity}
         </Badge>
       </div>
-
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="font-mono text-xs">
           {log.action.replace("_", " ")}
         </Badge>
       </div>
-
       <div className="text-sm">{log.description}</div>
-
       {log.username && (
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
@@ -358,12 +474,11 @@ export default function SystemLogsPage() {
           <span className="text-sm font-medium">{log.username}</span>
         </div>
       )}
-
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
           <span className="text-muted-foreground">Time:</span>
           <div className="font-mono text-xs">
-            {new Date(log.timestamp).toLocaleString()}
+            {getRelativeTime(log.timestamp)}
           </div>
         </div>
         <div>
@@ -371,7 +486,6 @@ export default function SystemLogsPage() {
           <div className="font-mono text-xs">{log.ipAddress || "N/A"}</div>
         </div>
       </div>
-
       {log.metadata && Object.keys(log.metadata).length > 0 && (
         <div className="p-2 bg-muted rounded-md">
           <span className="text-xs text-muted-foreground">Metadata:</span>
@@ -403,15 +517,32 @@ export default function SystemLogsPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="fixed-header-layout">
         <Header />
-        <div className="flex flex-1 flex-col gap-6 container-padding pt-0">
-          <div className="space-y-6">
+        <div className="scrollable-content flex flex-1 flex-col gap-4 p-4">
+          <div className="space-y-4">
+            {/* Breadcrumb Navigation */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/logs">Logs</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>System Logs</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+
             <div className="space-y-2">
-              <h1 className="heading-responsive font-bold tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-poppins">
                 System Logs
               </h1>
-              <p className="text-responsive text-muted-foreground">
+              <p className="text-muted-foreground">
                 Comprehensive audit trail of all system activities and user
                 actions.
               </p>
@@ -476,26 +607,84 @@ export default function SystemLogsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <SearchFilters
                 searchPlaceholder="Search system logs..."
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 filters={filterOptions}
-                onSearch={setSearchQuery}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 activeFilters={activeFilters}
                 className="flex-1"
               />
-              <Button onClick={handleExport} className="sm:ml-4">
+              <Button
+                onClick={handleExport}
+                disabled={isExporting}
+                className="sm:ml-4"
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                {isExporting ? "Exporting..." : "Export"}
               </Button>
             </div>
 
             <MobileTable
               columns={columns}
-              data={filteredLogs}
+              data={paginatedLogs}
               actions={actions}
               mobileCardRender={mobileCardRender}
               emptyMessage="No system logs found matching your criteria."
             />
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)}{" "}
+                  of {filteredLogs.length} logs
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() =>
+                          setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        }
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div>
@@ -504,6 +693,12 @@ export default function SystemLogsPage() {
             </div>
           </div>
         </div>
+
+        <SystemLogDetailsModal
+          log={selectedLog}
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

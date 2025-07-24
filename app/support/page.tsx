@@ -12,21 +12,17 @@ import {
   Clock,
   CheckCircle,
   FileText,
-  Filter,
   RefreshCw,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SupportRequestModal } from "@/components/modals/support-request-modal";
 import type { SupportRequest, Alert } from "@/lib/types";
+import { toast } from "sonner";
 
 // Mock data for alerts
 const mockAlerts: Alert[] = [
@@ -108,6 +104,32 @@ const mockSupportRequests: SupportRequest[] = [
     created: "2025-01-08 10:45:12",
     description: "Multiple failed verification attempts",
   },
+  // Add more mock data for pagination testing
+  ...Array.from({ length: 15 }, (_, i) => ({
+    id: `SUP-2025-${String(i + 6).padStart(3, "0")}`,
+    user: `@user${i + 6}`,
+    issueType: [
+      "Missing Proof",
+      "Bot Error",
+      "Dispute",
+      "Timeout",
+      "Suspicious Activity",
+    ][Math.floor(Math.random() * 5)],
+    severity: ["critical", "high", "medium", "low"][
+      Math.floor(Math.random() * 4)
+    ] as "critical" | "high" | "medium" | "low",
+    status: ["open", "in_progress", "resolved", "escalated"][
+      Math.floor(Math.random() * 4)
+    ] as "open" | "in_progress" | "resolved" | "escalated",
+    assignedTo: ["support_agent", "trade_manager", "super_admin", "Unassigned"][
+      Math.floor(Math.random() * 4)
+    ],
+    created: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace("T", " ")
+      .split(".")[0],
+    description: `Support request description for issue ${i + 6}`,
+  })),
 ];
 
 const filterOptions = [
@@ -144,13 +166,30 @@ const filterOptions = [
   },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function SupportPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(
     {}
   );
   const [alerts, setAlerts] = useState(mockAlerts);
+  const [supportRequests, setSupportRequests] = useState(mockSupportRequests);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRequest, setSelectedRequest] = useState<SupportRequest | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Debounced search
+  useMemo(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Simulate real-time alert updates
   useEffect(() => {
@@ -170,14 +209,13 @@ export default function SupportPage() {
         setAlerts((prev) => [newAlert, ...prev.slice(0, 9)]);
       }
     }, 10000);
-
     return () => clearInterval(interval);
   }, []);
 
   const filteredRequests = useMemo(() => {
-    return mockSupportRequests.filter((request) => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+    return supportRequests.filter((request) => {
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         if (
           !request.id.toLowerCase().includes(query) &&
           !request.user.toLowerCase().includes(query) &&
@@ -186,30 +224,88 @@ export default function SupportPage() {
           return false;
         }
       }
-
       for (const [key, value] of Object.entries(activeFilters)) {
         if (value && request[key as keyof SupportRequest] !== value) {
           return false;
         }
       }
-
       return true;
     });
-  }, [searchQuery, activeFilters]);
+  }, [supportRequests, debouncedSearchQuery, activeFilters]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleFilterChange = (key: string, value: string) => {
     setActiveFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
     setActiveFilters({});
     setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setCurrentPage(1);
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsRefreshing(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Simulate refreshing data
+      toast.success("Support requests and alerts have been updated");
+    } catch (error) {
+      toast.error("Failed to refresh data. Please try again.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleDismissAlert = (alertId: string) => {
+    setAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
+    toast.success("The alert has been removed from the feed");
+  };
+
+  const handleViewRequest = (request: SupportRequest) => {
+    setSelectedRequest(request);
+    setIsModalOpen(true);
+  };
+
+  const handleResolveRequest = (id: string, resolution: string) => {
+    setSupportRequests((prev) =>
+      prev.map((req) =>
+        req.id === id ? { ...req, status: "resolved" as const } : req
+      )
+    );
+    toast.success("The support request has been marked as resolved");
+  };
+
+  const handleEscalateRequest = (id: string, reason: string) => {
+    setSupportRequests((prev) =>
+      prev.map((req) =>
+        req.id === id
+          ? { ...req, status: "escalated" as const, assignedTo: "super_admin" }
+          : req
+      )
+    );
+    toast.success(
+      "The support request has been escalated to senior management"
+    );
+  };
+
+  const handleAssignRequest = (id: string, assignee: string) => {
+    setSupportRequests((prev) =>
+      prev.map((req) =>
+        req.id === id
+          ? { ...req, assignedTo: assignee, status: "in_progress" as const }
+          : req
+      )
+    );
+    toast.success(`The request has been assigned to ${assignee}`);
   };
 
   const getSeverityColor = (severity: string) => {
@@ -315,11 +411,28 @@ export default function SupportPage() {
     {
       key: "assignedTo",
       label: "ASSIGNED TO",
-      className: "font-medium",
+      render: (value: string) => (
+        <span className="font-medium capitalize">
+          {value === "Unassigned" ? "Unassigned" : value.replace("_", " ")}
+        </span>
+      ),
     },
     {
       key: "created",
       label: "CREATED",
+      render: (value: string) => {
+        const date = new Date(value);
+        const now = new Date();
+        const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+          return `${Math.floor(diffInHours)}h ago`;
+        } else if (diffInHours < 168) {
+          return `${Math.floor(diffInHours / 24)}d ago`;
+        } else {
+          return date.toLocaleDateString();
+        }
+      },
       className: "font-mono text-sm text-muted-foreground",
     },
   ];
@@ -327,22 +440,29 @@ export default function SupportPage() {
   const actions = [
     {
       label: "View",
-      onClick: (request: SupportRequest) => console.log("View", request.id),
+      onClick: handleViewRequest,
     },
     {
       label: "Resolve",
-      onClick: (request: SupportRequest) => console.log("Resolve", request.id),
+      onClick: (request: SupportRequest) =>
+        handleResolveRequest(request.id, "Quick resolve"),
+      condition: (request: SupportRequest) => request.status !== "resolved",
     },
     {
       label: "Escalate",
-      onClick: (request: SupportRequest) => console.log("Escalate", request.id),
+      onClick: (request: SupportRequest) =>
+        handleEscalateRequest(request.id, "Manual escalation"),
       variant: "destructive" as const,
+      condition: (request: SupportRequest) =>
+        request.status !== "resolved" && request.status !== "escalated",
     },
   ];
 
-  const totalAlerts = 5;
-  const openAlerts = 2;
-  const criticalAlerts = 2;
+  const totalAlerts = alerts.length;
+  const openAlerts = alerts.filter((a) => a.status === "active").length;
+  const criticalAlerts = alerts.filter(
+    (a) => a.type === "critical" && a.status === "active"
+  ).length;
   const resolvedToday = 8;
 
   return (
@@ -362,9 +482,11 @@ export default function SupportPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="destructive" className="animate-pulse">
-                  {criticalAlerts} Critical
-                </Badge>
+                {criticalAlerts > 0 && (
+                  <Badge variant="destructive" className="animate-pulse">
+                    {criticalAlerts} Critical
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -385,7 +507,6 @@ export default function SupportPage() {
                   </div>
                 </CardContent>
               </Card>
-
               <Card className="card-enhanced">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -401,7 +522,6 @@ export default function SupportPage() {
                   </div>
                 </CardContent>
               </Card>
-
               <Card className="card-enhanced">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -417,7 +537,6 @@ export default function SupportPage() {
                   </div>
                 </CardContent>
               </Card>
-
               <Card className="card-enhanced">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -476,7 +595,12 @@ export default function SupportPage() {
                           </p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleDismissAlert(alert.id)}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -491,55 +615,10 @@ export default function SupportPage() {
                 <CardTitle className="font-poppins">
                   All Support Requests
                 </CardTitle>
-                {/* <div className="flex items-center gap-2">
-                  <Select defaultValue="all-severity">
-                    <SelectTrigger className="w-32 bg-background/50 border-border/50">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-severity">All Severity</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select defaultValue="all-status">
-                    <SelectTrigger className="w-32 bg-background/50 border-border/50">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-status">All Status</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select defaultValue="all-types">
-                    <SelectTrigger className="w-32 bg-background/50 border-border/50">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-types">All Types</SelectItem>
-                      <SelectItem value="missing-proof">
-                        Missing Proof
-                      </SelectItem>
-                      <SelectItem value="bot-error">Bot Error</SelectItem>
-                      <SelectItem value="dispute">Dispute</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    className="bg-background/50 border-border/50"
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
-                  </Button>
-                </div> */}
               </CardHeader>
               <CardContent className="space-y-4">
                 <SearchFilters
-                  searchPlaceholder="Search..."
+                  searchPlaceholder="Search requests..."
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   filterOptions={filterOptions}
@@ -547,17 +626,104 @@ export default function SupportPage() {
                   onClearFilters={handleClearFilters}
                   activeFilters={activeFilters}
                 />
-
                 <MobileTable
-                  data={filteredRequests}
+                  data={paginatedRequests}
                   columns={columns}
                   actions={actions}
                   emptyMessage="No support requests found"
                 />
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                    {Math.min(
+                      currentPage * ITEMS_PER_PAGE,
+                      filteredRequests.length
+                    )}{" "}
+                    of {filteredRequests.length} requests
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={
+                                  currentPage === pageNum
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                        )}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(totalPages, prev + 1)
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        <SupportRequestModal
+          request={selectedRequest}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          onResolve={handleResolveRequest}
+          onEscalate={handleEscalateRequest}
+          onAssign={handleAssignRequest}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

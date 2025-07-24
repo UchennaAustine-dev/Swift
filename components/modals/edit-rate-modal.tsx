@@ -1,14 +1,14 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,172 +21,200 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, TrendingUp, TrendingDown } from "lucide-react";
+import { toast } from "sonner";
 
-interface EditRateModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  asset: {
-    symbol: string;
-    name: string;
-    platform: string;
-    currentRate: number;
-    source: string;
-    autoMargin: number;
-  } | null;
+interface ExchangeRate {
+  id: string;
+  asset: string;
+  platform: string;
+  source: string;
+  sourceType?: string;
+  currentRate: string;
+  autoMargin: string;
+  change24h: string;
+  accuracy: string;
+  lastSynced: string;
+  changePositive: boolean;
 }
 
-export function EditRateModal({ isOpen, onClose, asset }: EditRateModalProps) {
-  const [formData, setFormData] = useState({
-    rateSource: asset?.source || "auto",
-    currentRate: asset?.currentRate || 0,
-    autoMargin: asset?.autoMargin || 2.5,
-    manualRate: "",
-  });
+interface EditRateModalProps {
+  rate: ExchangeRate | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdate: (rate: ExchangeRate) => void;
+}
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function EditRateModal({
+  rate,
+  isOpen,
+  onClose,
+  onUpdate,
+}: EditRateModalProps) {
+  const [formData, setFormData] = useState<Partial<ExchangeRate>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!asset) return null;
+  useEffect(() => {
+    if (rate) {
+      setFormData(rate);
+    }
+  }, [rate]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.currentRate?.trim()) {
+      newErrors.currentRate = "Current rate is required";
+    }
+
+    if (formData.source === "API" && !formData.autoMargin?.trim()) {
+      newErrors.autoMargin = "Auto margin is required for API sources";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (!validateForm() || !rate) {
+      toast.error("Validation Error", {
+        description: "Please fix the errors in the form.",
+      });
+      return;
+    }
 
-    console.log("Updating rate:", asset.symbol, formData);
-    setIsSubmitting(false);
+    setIsLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const updatedRate: ExchangeRate = {
+        ...rate,
+        ...formData,
+        lastSynced: new Date().toISOString(),
+      } as ExchangeRate;
+
+      onUpdate(updatedRate);
+      handleClose();
+    } catch (error) {
+      toast.error("Error", {
+        description: "Failed to update exchange rate. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({});
+    setErrors({});
     onClose();
   };
 
-  const calculateNewRate = () => {
-    if (formData.rateSource === "manual" && formData.manualRate) {
-      return Number(formData.manualRate);
-    }
-    return formData.currentRate * (1 + formData.autoMargin / 100);
-  };
-
-  const rateDifference = calculateNewRate() - formData.currentRate;
-  const rateChangePercent = (rateDifference / formData.currentRate) * 100;
+  if (!rate) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="font-poppins flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Edit Rate - {asset.symbol}
-          </DialogTitle>
+          <DialogTitle>Edit Exchange Rate</DialogTitle>
+          <DialogDescription>
+            Update the exchange rate configuration for {rate.asset}.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Current Rate Display */}
-          <div className="p-4 bg-muted/20 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">
-                Current Rate
-              </span>
-              <Badge variant="outline">{asset.platform}</Badge>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Asset</Label>
+              <div className="p-2 bg-muted rounded-md">
+                <Badge variant="outline" className="font-medium">
+                  {rate.asset}
+                </Badge>
+              </div>
             </div>
-            <div className="text-2xl font-bold font-mono">
-              ₦{asset.currentRate.toLocaleString()}
+
+            <div className="space-y-2">
+              <Label>Platform</Label>
+              <div className="p-2 bg-muted rounded-md">
+                <Badge
+                  variant="outline"
+                  className={
+                    rate.platform === "Telegram"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-green-500 text-green-600"
+                  }
+                >
+                  {rate.platform}
+                </Badge>
+              </div>
             </div>
           </div>
 
-          {/* Rate Source */}
           <div className="space-y-2">
-            <Label htmlFor="rateSource">Rate Source</Label>
+            <Label htmlFor="currentRate">Current Rate *</Label>
+            <Input
+              id="currentRate"
+              placeholder="e.g., ₦98,450,000"
+              value={formData.currentRate || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, currentRate: e.target.value })
+              }
+              className={errors.currentRate ? "border-red-500" : ""}
+            />
+            {errors.currentRate && (
+              <p className="text-sm text-red-500">{errors.currentRate}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
             <Select
-              value={formData.rateSource}
+              value={formData.source}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, rateSource: value }))
+                setFormData({ ...formData, source: value })
               }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Auto (API)</SelectItem>
-                <SelectItem value="manual">Manual Override</SelectItem>
+                <SelectItem value="API">API</SelectItem>
+                <SelectItem value="Manual">Manual</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Auto Margin or Manual Rate */}
-          {formData.rateSource === "auto" ? (
+          {formData.source === "API" && (
             <div className="space-y-2">
-              <Label htmlFor="autoMargin">Auto Margin (%)</Label>
+              <Label htmlFor="autoMargin">Auto Margin *</Label>
               <Input
                 id="autoMargin"
-                type="number"
-                step="0.1"
-                value={formData.autoMargin}
+                placeholder="e.g., 2.5%"
+                value={formData.autoMargin || ""}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    autoMargin: Number(e.target.value),
-                  }))
+                  setFormData({ ...formData, autoMargin: e.target.value })
                 }
+                className={errors.autoMargin ? "border-red-500" : ""}
               />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="manualRate">Manual Rate (₦)</Label>
-              <Input
-                id="manualRate"
-                type="number"
-                placeholder="Enter manual rate"
-                value={formData.manualRate}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    manualRate: e.target.value,
-                  }))
-                }
-                required={formData.rateSource === "manual"}
-              />
+              {errors.autoMargin && (
+                <p className="text-sm text-red-500">{errors.autoMargin}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Automatic margin added to the base rate
+              </p>
             </div>
           )}
 
-          {/* Rate Preview */}
-          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">New Rate Preview</span>
-              <div
-                className={`flex items-center gap-1 text-sm ${
-                  rateDifference > 0
-                    ? "text-green-500"
-                    : rateDifference < 0
-                    ? "text-red-500"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {rateDifference > 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : rateDifference < 0 ? (
-                  <TrendingDown className="h-3 w-3" />
-                ) : null}
-                <span>
-                  {rateDifference > 0 ? "+" : ""}
-                  {rateChangePercent.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-            <div className="text-xl font-bold font-mono">
-              ₦{calculateNewRate().toLocaleString()}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Difference: ₦{Math.abs(rateDifference).toLocaleString()}
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Rate"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Updating..." : "Update Rate"}
             </Button>
           </DialogFooter>
         </form>

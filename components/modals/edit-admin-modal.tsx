@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,10 +34,11 @@ interface Admin {
   createdBy: string;
 }
 
-interface AddAdminModalProps {
+interface EditAdminModalProps {
+  admin: Admin | null;
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (admin: Omit<Admin, "id" | "created">) => void;
+  onUpdate: (admin: Admin) => void;
 }
 
 const PERMISSION_OPTIONS = [
@@ -57,21 +58,26 @@ const PERMISSION_OPTIONS = [
   },
 ];
 
-export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
-  const [formData, setFormData] = useState({
-    username: "",
-    role: "" as Admin["role"] | "",
-    permissions: [] as string[],
-    status: "Active" as const,
-    createdBy: "super_admin", // This would come from current user context
-  });
+export function EditAdminModal({
+  admin,
+  isOpen,
+  onClose,
+  onUpdate,
+}: EditAdminModalProps) {
+  const [formData, setFormData] = useState<Partial<Admin>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (admin) {
+      setFormData(admin);
+    }
+  }, [admin]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.username.trim()) {
+    if (!formData.username?.trim()) {
       newErrors.username = "Username is required";
     } else if (formData.username.length < 3) {
       newErrors.username = "Username must be at least 3 characters";
@@ -81,7 +87,7 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
       newErrors.role = "Role is required";
     }
 
-    if (formData.permissions.length === 0) {
+    if (!formData.permissions?.length) {
       newErrors.permissions = "At least one permission is required";
     }
 
@@ -92,7 +98,7 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !admin) {
       toast.error("Validation Error", {
         description: "Please fix the errors in the form.",
       });
@@ -105,16 +111,16 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const newAdmin: Omit<Admin, "id" | "created"> = {
+      const updatedAdmin: Admin = {
+        ...admin,
         ...formData,
-        role: formData.role as Admin["role"],
-      };
+      } as Admin;
 
-      onAdd(newAdmin);
+      onUpdate(updatedAdmin);
       handleClose();
     } catch (error) {
       toast.error("Error", {
-        description: "Failed to add admin. Please try again.",
+        description: "Failed to update admin. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -122,13 +128,7 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
   };
 
   const handleClose = () => {
-    setFormData({
-      username: "",
-      role: "",
-      permissions: [],
-      status: "Active",
-      createdBy: "super_admin",
-    });
+    setFormData({});
     setErrors({});
     onClose();
   };
@@ -141,10 +141,12 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
     setFormData((prev) => ({
       ...prev,
       permissions: checked
-        ? [...prev.permissions, permission]
-        : prev.permissions.filter((p) => p !== permission),
+        ? [...(prev.permissions || []), permission]
+        : (prev.permissions || []).filter((p) => p !== permission),
     }));
   };
+
+  if (!admin) return null;
 
   const availablePermissions = PERMISSION_OPTIONS.filter((perm) =>
     formData.role ? perm.roles.includes(formData.role) : false
@@ -154,9 +156,9 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Admin</DialogTitle>
+          <DialogTitle>Edit Admin</DialogTitle>
           <DialogDescription>
-            Create a new admin account with specific roles and permissions.
+            Update admin account information and permissions.
           </DialogDescription>
         </DialogHeader>
 
@@ -166,7 +168,7 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
             <Input
               id="username"
               placeholder="Enter username"
-              value={formData.username}
+              value={formData.username || ""}
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
@@ -205,7 +207,10 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
                   >
                     <Checkbox
                       id={permission.id}
-                      checked={formData.permissions.includes(permission.label)}
+                      checked={
+                        formData.permissions?.includes(permission.label) ||
+                        false
+                      }
                       onCheckedChange={(checked) =>
                         handlePermissionChange(
                           permission.label,
@@ -233,7 +238,7 @@ export function AddAdminModal({ isOpen, onClose, onAdd }: AddAdminModalProps) {
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Admin"}
+              {isLoading ? "Updating..." : "Update Admin"}
             </Button>
           </DialogFooter>
         </form>
