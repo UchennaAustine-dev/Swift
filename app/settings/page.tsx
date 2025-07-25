@@ -630,6 +630,55 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
+              {/* Webhook Configuration */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <Webhook className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle>Webhook Configuration</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Configure webhook endpoints for external integrations
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="webhook-url"
+                      className="flex items-center gap-2"
+                    >
+                      Webhook URL
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>URL where webhook notifications will be sent</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </Label>
+                    <Input
+                      id="webhook-url"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      className={`font-mono ${
+                        getFieldError("webhookUrl") ? "border-red-500" : ""
+                      }`}
+                      placeholder="https://your-domain.com/webhook"
+                    />
+                    {getFieldError("webhookUrl") && (
+                      <p className="text-sm text-red-500">
+                        {getFieldError("webhookUrl")}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* SMTP Email Configuration */}
               <Card>
                 <CardHeader>
@@ -649,7 +698,7 @@ export default function SettingsPage() {
                       variant="outline"
                       onClick={handleTestMail}
                       disabled={isTestingMail}
-                      className="bg-blue-600 text-white hover:bg-blue-700"
+                      className="bg-blue-600 text-white hover:bg-blue-700 hover:text-white cursor-pointer"
                     >
                       {isTestingMail ? (
                         <>
@@ -754,55 +803,6 @@ export default function SettingsPage() {
                         placeholder="465"
                       />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Webhook Configuration */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                      <Webhook className="h-5 w-5 text-purple-400" />
-                    </div>
-                    <div>
-                      <CardTitle>Webhook Configuration</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Configure webhook endpoints for external integrations
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="webhook-url"
-                      className="flex items-center gap-2"
-                    >
-                      Webhook URL
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>URL where webhook notifications will be sent</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </Label>
-                    <Input
-                      id="webhook-url"
-                      value={webhookUrl}
-                      onChange={(e) => setWebhookUrl(e.target.value)}
-                      className={`font-mono ${
-                        getFieldError("webhookUrl") ? "border-red-500" : ""
-                      }`}
-                      placeholder="https://your-domain.com/webhook"
-                    />
-                    {getFieldError("webhookUrl") && (
-                      <p className="text-sm text-red-500">
-                        {getFieldError("webhookUrl")}
-                      </p>
-                    )}
                   </div>
                 </CardContent>
               </Card>
