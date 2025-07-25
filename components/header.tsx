@@ -8,6 +8,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
@@ -17,13 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Bell,
   Settings,
@@ -38,7 +32,9 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
+import { MaintenanceModeModal } from "./modals/maintenance-mode-modal";
 
+// Main Header Component
 export function Header() {
   const { theme, setTheme } = useTheme();
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -70,16 +66,16 @@ export function Header() {
   }, []);
 
   const handleMaintenanceToggle = (checked: boolean) => {
-    if (checked) {
-      setIsMaintenanceModalOpen(true);
-    } else {
-      setMaintenanceMode(false);
-    }
+    setIsMaintenanceModalOpen(true);
   };
 
-  const confirmMaintenanceMode = () => {
-    setMaintenanceMode(true);
-    setIsMaintenanceModalOpen(false);
+  const handleMaintenanceConfirm = (enabled: boolean, message?: string) => {
+    setMaintenanceMode(enabled);
+    // Here you would typically also send the maintenance status and message to your backend
+    console.log(
+      `Maintenance mode ${enabled ? "enabled" : "disabled"}`,
+      message
+    );
   };
 
   const getNotificationIcon = (type: string) => {
@@ -350,10 +346,10 @@ export function Header() {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              {/* <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -365,46 +361,12 @@ export function Header() {
       </header>
 
       {/* Maintenance Mode Confirmation Dialog */}
-      <Dialog
-        open={isMaintenanceModalOpen}
-        onOpenChange={setIsMaintenanceModalOpen}
-      >
-        <DialogContent className="bg-background border border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Enable Maintenance Mode
-            </DialogTitle>
-            <DialogDescription>
-              This will temporarily disable the platform for all users. Only
-              administrators will be able to access the system.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
-              <Wrench className="h-4 w-4" />
-              <span className="font-medium">Impact:</span>
-            </div>
-            <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
-              <li>• All user trading will be suspended</li>
-              <li>• Bots will show maintenance messages</li>
-              <li>• New registrations will be disabled</li>
-              <li>• API endpoints will return maintenance status</li>
-            </ul>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsMaintenanceModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmMaintenanceMode}>
-              Enable Maintenance Mode
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MaintenanceModeModal
+        isOpen={isMaintenanceModalOpen}
+        onClose={() => setIsMaintenanceModalOpen(false)}
+        currentMode={maintenanceMode}
+        onConfirm={handleMaintenanceConfirm}
+      />
     </>
   );
 }

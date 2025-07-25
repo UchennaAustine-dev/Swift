@@ -334,7 +334,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-3">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.url;
                 return (
@@ -343,7 +343,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <Link
                         href={item.url}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                          "flex items-center gap-5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                           "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/80",
                           isActive && [
                             "bg-blue-600 text-white shadow-md",
