@@ -605,7 +605,7 @@ export default function AdminsPage() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button
                     variant="outline"
-                    className="bg-background hover:bg-muted"
+                    className="bg-green-600 hover:bg-green-700 text-white cursor-pointer hover:text-white hover:border-none"
                     onClick={handleExport}
                     disabled={isExporting}
                   >
@@ -614,7 +614,7 @@ export default function AdminsPage() {
                   </Button>
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+                    className="bg-blue-400 hover:bg-blue-500 text-white cursor-pointer hover:text-white hover:border-none"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Admin

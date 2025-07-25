@@ -507,7 +507,7 @@ export default function UsersPage() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button
                     variant="outline"
-                    className="bg-background hover:bg-muted"
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                     onClick={handleExportUsers}
                     disabled={isExporting}
                   >

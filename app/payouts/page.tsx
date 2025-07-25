@@ -676,7 +676,7 @@ export default function PayoutsPage() {
                 className="flex-1"
               />
               <Button
-                className="sm:ml-4"
+                className="sm:ml-4 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                 onClick={handleExport}
                 disabled={isExporting}
               >

@@ -230,7 +230,7 @@ export default function SettingsPage() {
         <AppSidebar />
         <SidebarInset>
           <Header />
-          <div className="flex flex-1 flex-col gap-6 container-padding pt-0">
+          <div className="flex flex-1 flex-col gap-6 container-padding pt-0 mt-5">
             {/* Breadcrumb Navigation */}
             <Breadcrumb>
               <BreadcrumbList>
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   onClick={handleResetDefaults}
-                  className="flex items-center gap-2 bg-transparent"
+                  className="flex items-center gap-2 hover:text-white hover:border-none bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                 >
                   <RotateCcw className="h-4 w-4" />
                   Reset to Defaults
@@ -510,6 +510,7 @@ export default function SettingsPage() {
                         variant="outline"
                         onClick={() => handleTestToken("telegram")}
                         disabled={testingTokens.telegram}
+                        className="hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                       >
                         {testingTokens.telegram ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -552,6 +553,7 @@ export default function SettingsPage() {
                         variant="outline"
                         onClick={() => handleTestToken("whatsapp")}
                         disabled={testingTokens.whatsapp}
+                        className="hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                       >
                         {testingTokens.whatsapp ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -720,7 +722,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="min-w-32"
+                  className="min-w-32 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
                 >
                   {isSaving ? (
                     <>

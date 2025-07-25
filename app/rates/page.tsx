@@ -569,7 +569,7 @@ export default function RatesPage() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button
                     variant="outline"
-                    className="bg-background hover:bg-muted"
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
                     onClick={handleExport}
                     disabled={isExporting}
                   >
@@ -578,14 +578,14 @@ export default function RatesPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="bg-background hover:bg-muted"
+                    className="bg-blue-400 hover:bg-blue-500 text-white cursor-pointer hover:text-white hover:border-none"
                     onClick={() => setIsAddModalOpen(true)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Rate
                   </Button>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-green-600 hover:bg-green-700 hover:text-white hover:border-none text-white cursor-pointer"
                     onClick={handleSyncAll}
                     disabled={isSyncing}
                   >

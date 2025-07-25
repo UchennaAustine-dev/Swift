@@ -720,7 +720,7 @@ export default function BotLogsPage() {
               <Button
                 onClick={handleExport}
                 disabled={isExporting}
-                className="sm:ml-4"
+                className="sm:ml-4 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               >
                 <Download className="mr-2 h-4 w-4" />
                 {isExporting ? "Exporting..." : "Export"}

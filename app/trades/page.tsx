@@ -2005,7 +2005,7 @@ export default function TradesPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="bg-background hover:bg-muted"
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                     onClick={handleExport}
                     disabled={isExporting}
                   >
