@@ -160,23 +160,23 @@
     @apply p-3 sm:p-4 md:p-6;
   }
 
-  /* Enhanced cards - completely solid, no transparency */
+  /* Enhanced cards - no transparency */
   .card-enhanced {
     @apply bg-card text-card-foreground rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200;
   }
 
-  /* Status indicators - solid backgrounds */
+  /* Status indicators */
   .status-active {
-    @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800;
+    @apply bg-green-800 text-white border-green-200 dark:bg-green-900/30 dark:text-white dark:border-green-400;
   }
   .status-inactive {
-    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800;
+    @apply bg-red-800 text-white border-red-200 dark:bg-red-900/30 dark:text-white dark:border-red-400;
   }
   .status-pending {
     @apply bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800;
   }
 
-  /* Platform badges - solid backgrounds */
+  /* Platform badges */
   .platform-telegram {
     @apply bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800;
   }
@@ -184,7 +184,7 @@
     @apply bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800;
   }
 
-  /* Asset type badges - solid backgrounds */
+  /* Asset type badges */
   .asset-crypto {
     @apply bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800;
   }
@@ -192,7 +192,7 @@
     @apply bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800;
   }
 
-  /* Mobile optimizations - solid backgrounds */
+  /* Mobile optimizations */
   .mobile-card {
     @apply p-3 sm:p-4 space-y-3 border border-border rounded-lg bg-card;
   }
@@ -217,6 +217,27 @@
   }
   .responsive-grid-6 {
     @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6;
+  }
+
+  /* Enhanced maintenance switch styling */
+  .maintenance-switch {
+    @apply scale-125 transition-all duration-200;
+  }
+
+  .maintenance-switch[data-state="checked"] {
+    @apply bg-yellow-500 border-yellow-600 shadow-lg shadow-yellow-500/25;
+  }
+
+  .maintenance-switch[data-state="unchecked"] {
+    @apply bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .maintenance-switch[data-state="checked"] .switch-thumb {
+    @apply bg-white shadow-md;
+  }
+
+  .maintenance-switch[data-state="unchecked"] .switch-thumb {
+    @apply bg-white shadow-sm;
   }
 }
 
@@ -269,7 +290,7 @@
   }
 }
 
-/* Ensure proper solid background colors for all components */
+/* Ensure proper background colors for components */
 .bg-sidebar {
   background-color: hsl(var(--sidebar)) !important;
 }
@@ -282,14 +303,6 @@
   background-color: hsl(var(--card)) !important;
 }
 
-.bg-popover {
-  background-color: hsl(var(--popover)) !important;
-}
-
-.bg-muted {
-  background-color: hsl(var(--muted)) !important;
-}
-
 /* Remove any potential transparency from dropdowns and popovers */
 [data-radix-popper-content-wrapper] {
   background-color: hsl(var(--popover)) !important;
@@ -300,36 +313,12 @@
   background-color: hsl(var(--popover)) !important;
 }
 
-/* Fix any potential transparency issues in sidebar */
-.sidebar-provider * {
-  background-color: inherit;
-}
-
-/* Ensure input backgrounds are solid */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="date"],
-input[type="number"],
-textarea,
-select {
-  background-color: hsl(var(--background)) !important;
-}
-
-/* Ensure button backgrounds are solid */
-button[data-state="open"] {
-  background-color: hsl(var(--muted)) !important;
-}
-
 /* Remove transparency from any remaining elements */
 .opacity-50 {
   opacity: 1 !important;
 }
 
-/* Ensure all cards and containers have solid backgrounds */
-.card,
-.card-enhanced,
-[data-radix-dialog-content],
-[data-radix-popover-content] {
-  background-color: hsl(var(--card)) !important;
+/* Fix any potential transparency issues */
+.sidebar-provider * {
+  background-color: inherit;
 }

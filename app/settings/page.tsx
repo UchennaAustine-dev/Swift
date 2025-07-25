@@ -11,6 +11,13 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -36,6 +43,8 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
+  Mail,
+  Send,
 } from "lucide-react";
 import { MaintenanceModeModal } from "@/components/modals/maintenance-mode-modal";
 import { validateSettings, type ValidationError } from "@/lib/validation";
@@ -67,8 +76,19 @@ export default function SettingsPage() {
     "https://hooks.slack.com/services/••••••••••••••••••••••"
   );
 
+  // SMTP Configuration State
+  const [senderName, setSenderName] = useState("Smartweb Infotech");
+  const [senderEmail, setSenderEmail] = useState("smartweb@gmail.com");
+  const [smtpDriver, setSmtpDriver] = useState("smtp");
+  const [smtpHost, setSmtpHost] = useState("smtp.mailtrap.io");
+  const [smtpUsername, setSmtpUsername] = useState("smartweb@example.com");
+  const [smtpPassword, setSmtpPassword] = useState("smartweb123");
+  const [smtpEncryption, setSmtpEncryption] = useState("SSL");
+  const [smtpPort, setSmtpPort] = useState("465");
+
   // Loading and validation states
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingMail, setIsTestingMail] = useState(false);
   const [testingTokens, setTestingTokens] = useState<{
     telegram: boolean;
     whatsapp: boolean;
@@ -122,6 +142,29 @@ export default function SettingsPage() {
     }
   }, []);
 
+  // Test mail functionality
+  const handleTestMail = useCallback(async () => {
+    setIsTestingMail(true);
+    try {
+      // Simulate sending test email
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          Math.random() > 0.2
+            ? resolve(true)
+            : reject(new Error("SMTP connection failed"));
+        }, 3000);
+      });
+
+      toast.success("Test email sent successfully! Check your inbox.");
+    } catch (error) {
+      toast.error(
+        "Failed to send test email. Please check your SMTP configuration."
+      );
+    } finally {
+      setIsTestingMail(false);
+    }
+  }, []);
+
   // Save settings functionality
   const handleSave = useCallback(async () => {
     const settings = {
@@ -133,6 +176,12 @@ export default function SettingsPage() {
       webhookUrl,
       emailRecipients,
       slackWebhook,
+      senderName,
+      senderEmail,
+      smtpHost,
+      smtpUsername,
+      smtpPassword,
+      smtpPort,
     };
 
     // Validate settings
@@ -150,9 +199,6 @@ export default function SettingsPage() {
       // Simulate API call to save settings
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Here you would make the actual API call
-      // await fetch('/api/settings', { method: 'POST', body: JSON.stringify(settings) });
-
       toast.success("Settings saved successfully");
       setValidationErrors([]);
     } catch (error) {
@@ -169,6 +215,12 @@ export default function SettingsPage() {
     webhookUrl,
     emailRecipients,
     slackWebhook,
+    senderName,
+    senderEmail,
+    smtpHost,
+    smtpUsername,
+    smtpPassword,
+    smtpPort,
   ]);
 
   // Reset to defaults
@@ -182,6 +234,14 @@ export default function SettingsPage() {
     setTelegramNotifications(false);
     setEmailRecipients("admin@swiftlify.com");
     setSlackWebhook("");
+    setSenderName("Smartweb Infotech");
+    setSenderEmail("smartweb@gmail.com");
+    setSmtpDriver("smtp");
+    setSmtpHost("smtp.mailtrap.io");
+    setSmtpUsername("smartweb@example.com");
+    setSmtpPassword("smartweb123");
+    setSmtpEncryption("SSL");
+    setSmtpPort("465");
     setValidationErrors([]);
     toast.success("Settings reset to defaults");
   }, []);
@@ -195,7 +255,6 @@ export default function SettingsPage() {
 
   const handleMaintenanceModeConfirm = (enabled: boolean, message?: string) => {
     setMaintenanceMode(enabled);
-    // Here you would save the maintenance mode state to your backend
     console.log("Maintenance mode:", enabled, "Message:", message);
   };
 
@@ -571,6 +630,134 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
+              {/* SMTP Email Configuration */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <Mail className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <CardTitle>SMTP Email Configuration</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Configure email server settings for notifications
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleTestMail}
+                      disabled={isTestingMail}
+                      className="bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      {isTestingMail ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Test Mail
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="sender-name">Sender Name</Label>
+                      <Input
+                        id="sender-name"
+                        value={senderName}
+                        onChange={(e) => setSenderName(e.target.value)}
+                        placeholder="Your Company Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sender-email">Sender Email</Label>
+                      <Input
+                        id="sender-email"
+                        type="email"
+                        value={senderEmail}
+                        onChange={(e) => setSenderEmail(e.target.value)}
+                        placeholder="noreply@yourcompany.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-driver">SMTP Driver</Label>
+                      <Select value={smtpDriver} onValueChange={setSmtpDriver}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="smtp">SMTP</SelectItem>
+                          <SelectItem value="sendmail">Sendmail</SelectItem>
+                          <SelectItem value="mailgun">Mailgun</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-host">SMTP Host</Label>
+                      <Input
+                        id="smtp-host"
+                        value={smtpHost}
+                        onChange={(e) => setSmtpHost(e.target.value)}
+                        placeholder="smtp.gmail.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-username">SMTP Username</Label>
+                      <Input
+                        id="smtp-username"
+                        value={smtpUsername}
+                        onChange={(e) => setSmtpUsername(e.target.value)}
+                        placeholder="your-email@gmail.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-password">SMTP Password</Label>
+                      <Input
+                        id="smtp-password"
+                        type="password"
+                        value={smtpPassword}
+                        onChange={(e) => setSmtpPassword(e.target.value)}
+                        placeholder="Your app password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-encryption">SMTP Encryption</Label>
+                      <Select
+                        value={smtpEncryption}
+                        onValueChange={setSmtpEncryption}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SSL">SSL</SelectItem>
+                          <SelectItem value="TLS">TLS</SelectItem>
+                          <SelectItem value="STARTTLS">STARTTLS</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-port">SMTP Port</Label>
+                      <Input
+                        id="smtp-port"
+                        type="number"
+                        value={smtpPort}
+                        onChange={(e) => setSmtpPort(e.target.value)}
+                        placeholder="465"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Webhook Configuration */}
               <Card>
                 <CardHeader>
@@ -722,7 +909,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="min-w-32 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
+                  className="min-w-32 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                 >
                   {isSaving ? (
                     <>

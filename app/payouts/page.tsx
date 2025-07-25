@@ -4,11 +4,9 @@ import { useState, useMemo } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Download,
   DollarSign,
   CheckCircle,
   XCircle,
@@ -20,8 +18,10 @@ import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PayoutDetailsModal } from "@/components/modals/payout-details-modal";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 import type { Payout } from "@/lib/types";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 // Mock payout data
 const mockPayouts: Payout[] = [
@@ -158,7 +158,6 @@ export default function PayoutsPage() {
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [payouts, setPayouts] = useState(mockPayouts);
-  const [isExporting, setIsExporting] = useState(false);
 
   // Debounced search
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -251,60 +250,6 @@ export default function PayoutsPage() {
   const handleDateRangeChange = (range: { from: string; to: string }) => {
     setDateRange(range);
     setCurrentPage(1);
-  };
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // Simulate export process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Create CSV content
-      const headers = [
-        "Payout ID",
-        "Trade ID",
-        "User",
-        "Amount",
-        "Method",
-        "Status",
-        "Processed By",
-        "Created",
-      ];
-      const csvContent = [
-        headers.join(","),
-        ...filteredPayouts.map((payout) =>
-          [
-            payout.payoutId,
-            payout.tradeId,
-            payout.user.username,
-            `${payout.currency}${payout.amount}`,
-            payout.method,
-            payout.status,
-            payout.processedBy,
-            new Date(payout.createdAt).toLocaleString(),
-          ].join(",")
-        ),
-      ].join("\n");
-
-      // Download CSV
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `payouts-export-${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast.success(`Exported ${filteredPayouts.length} payouts to CSV`);
-    } catch (error) {
-      toast.error("Failed to export payouts. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   const handleViewDetails = (payout: Payout) => {
@@ -675,14 +620,11 @@ export default function PayoutsPage() {
                 onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
-              <Button
+              <ExportDropdown
+                data={filteredPayouts}
+                filename="payouts"
                 className="sm:ml-4 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                onClick={handleExport}
-                disabled={isExporting}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isExporting ? "Exporting..." : "Export"}
-              </Button>
+              />
             </div>
 
             <MobileTable
