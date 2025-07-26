@@ -56,6 +56,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { APIConfig } from "@/lib/types";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 // Enhanced mock crypto API data
 const mockCryptoAPIs: APIConfig[] = [
@@ -803,15 +804,13 @@ export default function CryptoAPIPage() {
                     />
                     {isRefreshing ? "Refreshing..." : "Refresh"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
+
+                  <ExportDropdown
+                    data={filteredAPIs}
+                    filename={`crypto_apis_${format(new Date(), "yyyy-MM-dd")}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer p-4"
+                  />
+
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-blue-400 hover:bg-blue-500 cursor-pointer text-white"

@@ -35,7 +35,6 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  Download,
   TrendingUp,
   Loader2,
 } from "lucide-react";
@@ -56,6 +55,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { APISource } from "@/lib/types";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 // Enhanced mock API source data
 const mockAPISources: APISource[] = [
@@ -310,65 +310,6 @@ export default function GiftCardAPIPage() {
       setIsRefreshing(false);
     }
   }, []);
-
-  const handleExport = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const headers = [
-        "Name",
-        "Source URL",
-        "Type",
-        "Status",
-        "Uptime (%)",
-        "Priority",
-        "Error Count",
-        "Last Sync",
-        "Supported Assets",
-      ];
-
-      const csvContent = [
-        headers.join(","),
-        ...filteredSources.map((api) =>
-          [
-            api.name,
-            api.sourceUrl,
-            api.type,
-            api.status,
-            api.uptime,
-            api.priority,
-            api.errorCount,
-            format(new Date(api.lastSync), "yyyy-MM-dd HH:mm:ss"),
-            `"${api.supportedAssets.join(", ")}"`,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `api_sources_${format(new Date(), "yyyy-MM-dd")}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Export Successful", {
-        description: `Exported ${filteredSources.length} API sources to CSV file.`,
-      });
-    } catch (error) {
-      toast.error("Export Failed", {
-        description: "There was an error exporting the API sources data.",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [filteredSources]);
 
   const handleAddAPI = useCallback((newAPI: Omit<APISource, "id">) => {
     const apiWithId = {
@@ -810,15 +751,7 @@ export default function GiftCardAPIPage() {
                     />
                     {isRefreshing ? "Refreshing..." : "Refresh"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
+
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-blue-400 hover:bg-blue-500 text-white cursor-pointer"
@@ -826,6 +759,13 @@ export default function GiftCardAPIPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add API Source
                   </Button>
+
+                  {/* Replaced Export Button */}
+                  <ExportDropdown
+                    data={filteredSources}
+                    filename={`api_sources_${format(new Date(), "yyyy-MM-dd")}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer p-4 hover:border-none hover:text-white "
+                  />
                 </div>
               </div>
             </div>
