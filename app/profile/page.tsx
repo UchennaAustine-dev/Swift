@@ -119,7 +119,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
       {/* Back Button */}
       <Button
         variant="outline"
@@ -141,12 +141,31 @@ export default function ProfilePage() {
       />
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsList
+          className="flex max-w-full overflow-x-auto rounded-md border border-border bg-background"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <TabsTrigger className="flex-shrink-0 min-w-[7rem]" value="overview">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger className="flex-shrink-0 min-w-[7rem]" value="security">
+            Security
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex-shrink-0 min-w-[7rem]"
+            value="preferences"
+          >
+            Preferences
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex-shrink-0 min-w-[7rem]"
+            value="permissions"
+          >
+            Permissions
+          </TabsTrigger>
+          <TabsTrigger className="flex-shrink-0 min-w-[7rem]" value="activity">
+            Activity
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">

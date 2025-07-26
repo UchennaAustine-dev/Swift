@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Simple regex to validate username (starts with @ or + and then alphanumeric/underscore)
+const usernameRegex = /^[@+][\w\d_]{2,}$/;
 
 export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
   const [formData, setFormData] = useState({
@@ -35,23 +37,69 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
     role: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({
+    username: "",
+    platform: "",
+    role: "",
+  });
+
+  const usernameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen && usernameRef.current) {
+      usernameRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Validate all fields and set errors
+  const validate = () => {
+    const errors = {
+      username: "",
+      platform: "",
+      role: "",
+    };
+    if (!formData.username.trim()) {
+      errors.username = "Username is required";
+    } else if (!usernameRegex.test(formData.username.trim())) {
+      errors.username =
+        "Must start with '@' or '+' and be at least 3 characters";
+    }
+    if (!formData.platform) {
+      errors.platform = "Platform is required";
+    }
+    if (!formData.role) {
+      errors.role = "Role is required";
+    }
+    setValidationErrors(errors);
+
+    return !errors.username && !errors.platform && !errors.role;
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.username.trim() &&
+      usernameRegex.test(formData.username.trim()) &&
+      formData.platform &&
+      formData.role
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Fake API call
 
       toast.success("User Added Successfully", {
         description: `${formData.username} has been added to the system.`,
       });
 
-      // Reset form and close modal
       setFormData({ username: "", platform: "", role: "" });
       onClose();
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "Failed to add user. Please try again.",
       });
@@ -62,37 +110,63 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] w-full">
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
             Create a new user account. Fill in the required information below.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="grid gap-6 py-4">
+            {/* Username */}
+            <div className="grid gap-1">
+              <Label htmlFor="username" className="flex justify-between">
+                Username
+                {validationErrors.username && (
+                  <span className="text-xs text-red-600" role="alert">
+                    {validationErrors.username}
+                  </span>
+                )}
+              </Label>
               <Input
                 id="username"
+                type="text"
+                ref={usernameRef}
                 placeholder="@username or +1234567890"
                 value={formData.username}
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
                 }
+                aria-invalid={!!validationErrors.username}
+                aria-describedby="username-error"
+                autoComplete="username"
+                disabled={isLoading}
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="platform">Platform</Label>
+
+            {/* Platform */}
+            <div className="grid gap-1">
+              <Label htmlFor="platform" className="flex justify-between">
+                Platform
+                {validationErrors.platform && (
+                  <span className="text-xs text-red-600" role="alert">
+                    {validationErrors.platform}
+                  </span>
+                )}
+              </Label>
               <Select
                 value={formData.platform}
                 onValueChange={(value) =>
                   setFormData({ ...formData, platform: value })
                 }
+                aria-invalid={!!validationErrors.platform}
+                aria-describedby="platform-error"
+                disabled={isLoading}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger id="platform" aria-required="true">
                   <SelectValue placeholder="Select platform" />
                 </SelectTrigger>
                 <SelectContent>
@@ -101,16 +175,28 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="role">Role</Label>
+
+            {/* Role */}
+            <div className="grid gap-1">
+              <Label htmlFor="role" className="flex justify-between">
+                Role
+                {validationErrors.role && (
+                  <span className="text-xs text-red-600" role="alert">
+                    {validationErrors.role}
+                  </span>
+                )}
+              </Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) =>
                   setFormData({ ...formData, role: value })
                 }
+                aria-invalid={!!validationErrors.role}
+                aria-describedby="role-error"
+                disabled={isLoading}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger id="role" aria-required="true">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,12 +208,29 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add User"}
+            <Button
+              type="submit"
+              disabled={!isFormValid() || isLoading}
+              className="cursor-pointer bg-blue-600 text-white"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add User"
+              )}
             </Button>
           </DialogFooter>
         </form>
