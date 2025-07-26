@@ -85,6 +85,7 @@ import { AddRateModal } from "@/components/modals/add-rate-modal";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 // Mock data for statistics
 const statsData = {
@@ -567,15 +568,15 @@ export default function RatesPage() {
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button
-                    variant="outline"
-                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
+                  {/* Replaced Export Button */}
+                  <ExportDropdown
+                    data={filteredRates}
+                    filename={`exchange_rates_${format(
+                      new Date(),
+                      "yyyy-MM-dd"
+                    )}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none p-4"
+                  />
                   <Button
                     variant="outline"
                     className="bg-blue-400 hover:bg-blue-500 text-white cursor-pointer hover:text-white hover:border-none"

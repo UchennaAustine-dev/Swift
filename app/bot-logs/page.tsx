@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/pagination";
 import { BotLogDetailsModal } from "@/components/modals/bot-log-details-modal";
 import { toast } from "sonner";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 interface BotLog {
   readonly id: string;
@@ -717,14 +718,11 @@ export default function BotLogsPage() {
                 activeFilters={activeFilters}
                 className="flex-1"
               />
-              <Button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="sm:ml-4 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isExporting ? "Exporting..." : "Export"}
-              </Button>
+              <ExportDropdown
+                data={filteredLogs}
+                filename={`bot_logs_${new Date().toISOString().split("T")[0]}`}
+                className="sm:ml-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
+              />
             </div>
 
             <MobileTable

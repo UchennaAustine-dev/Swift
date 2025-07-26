@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/pagination";
 import { SystemLogDetailsModal } from "@/components/modals/system-log-details-modal";
 import { toast } from "sonner";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 interface SystemLog {
   readonly id: string;
@@ -615,14 +616,13 @@ export default function SystemLogsPage() {
                 activeFilters={activeFilters}
                 className="flex-1"
               />
-              <Button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="sm:ml-4 hover:text-white hover:border-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isExporting ? "Exporting..." : "Export"}
-              </Button>
+              <ExportDropdown
+                data={filteredLogs}
+                filename={`system_logs_${
+                  new Date().toISOString().split("T")[0]
+                }`}
+                className="sm:ml-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer hover:text-white hover:border-none"
+              />
             </div>
 
             <MobileTable

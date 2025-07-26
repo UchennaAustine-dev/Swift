@@ -315,65 +315,6 @@ export default function CryptoAPIPage() {
     }
   }, []);
 
-  const handleExport = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const headers = [
-        "Name",
-        "Type",
-        "Status",
-        "Priority",
-        "Auto Margin (%)",
-        "Uptime (%)",
-        "Error Count",
-        "Last Sync",
-        "Supported Assets",
-      ];
-
-      const csvContent = [
-        headers.join(","),
-        ...filteredAPIs.map((api) =>
-          [
-            api.name,
-            api.type,
-            api.status,
-            api.priority,
-            api.autoMargin,
-            api.uptime,
-            api.errorCount,
-            format(new Date(api.lastSync), "yyyy-MM-dd HH:mm:ss"),
-            `"${api.supportedAssets.join(", ")}"`,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `crypto_apis_${format(new Date(), "yyyy-MM-dd")}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Export Successful", {
-        description: `Exported ${filteredAPIs.length} crypto API sources to CSV file.`,
-      });
-    } catch (error) {
-      toast.error("Export Failed", {
-        description: "There was an error exporting the crypto API data.",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [filteredAPIs]);
-
   const handleAddAPI = useCallback((newAPI: Omit<APIConfig, "id">) => {
     const apiWithId = {
       ...newAPI,
