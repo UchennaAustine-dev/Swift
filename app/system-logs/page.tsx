@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/header";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -190,7 +189,7 @@ export default function SystemLogsPage() {
 
   const filteredLogs = useMemo(() => {
     return mockSystemLogs.filter((log) => {
-      // Search filter
+      // Search filter (existing)
       if (debouncedSearchQuery) {
         const query = debouncedSearchQuery.toLowerCase();
         if (
@@ -202,19 +201,31 @@ export default function SystemLogsPage() {
         }
       }
 
-      // Category filter
+      // Category filter (existing)
       if (activeFilters.category && log.category !== activeFilters.category) {
         return false;
       }
 
-      // Severity filter
+      // Severity filter (existing)
       if (activeFilters.severity && log.severity !== activeFilters.severity) {
         return false;
       }
 
+      // --- Add here: Date range filtering ---
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const logDate = new Date(log.timestamp);
+        if (logDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const logDate = new Date(log.timestamp);
+        if (logDate > toDate) return false;
+      }
+
       return true;
     });
-  }, [debouncedSearchQuery, activeFilters]);
+  }, [debouncedSearchQuery, activeFilters, dateRange]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);

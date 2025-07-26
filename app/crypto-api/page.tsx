@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus,
-  Download,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
@@ -256,6 +255,17 @@ export default function CryptoAPIPage() {
         ) {
           return false;
         }
+      }
+
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const apiDate = new Date(api.lastSync);
+        if (apiDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const apiDate = new Date(api.lastSync);
+        if (apiDate > toDate) return false;
       }
 
       // Other filters

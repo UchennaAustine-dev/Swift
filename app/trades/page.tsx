@@ -316,6 +316,7 @@ export default function TradesPage() {
 
   const filteredTrades = useMemo(() => {
     const filtered = trades.filter((trade) => {
+      // Existing search filtering
       if (debouncedSearchQuery) {
         const query = debouncedSearchQuery.toLowerCase();
         if (
@@ -327,6 +328,7 @@ export default function TradesPage() {
         }
       }
 
+      // Existing filters
       if (activeFilters.status && trade.status !== activeFilters.status)
         return false;
       if (
@@ -340,9 +342,22 @@ export default function TradesPage() {
       )
         return false;
 
+      // *** Add date range filtering ***
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const tradeDate = new Date(trade.createdAt);
+        if (tradeDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const tradeDate = new Date(trade.createdAt);
+        if (tradeDate > toDate) return false;
+      }
+
       return true;
     });
 
+    // Sorting logic as before
     filtered.sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
@@ -357,7 +372,14 @@ export default function TradesPage() {
     });
 
     return filtered;
-  }, [debouncedSearchQuery, activeFilters, trades, sortField, sortDirection]);
+  }, [
+    debouncedSearchQuery,
+    activeFilters,
+    trades,
+    sortField,
+    sortDirection,
+    dateRange,
+  ]);
 
   const totalPages = Math.ceil(filteredTrades.length / pageSize);
   const paginatedTrades = useMemo(() => {
@@ -376,6 +398,7 @@ export default function TradesPage() {
   const handleClearFilters = useCallback(() => {
     setActiveFilters({});
     setSearchQuery("");
+    toast.success("Filters cleared");
   }, []);
 
   const handlePageSizeChange = useCallback((value: string) => {

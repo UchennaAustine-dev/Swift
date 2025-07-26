@@ -220,7 +220,7 @@ export default function BotLogsPage() {
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      // Search filter
+      // Search filter as-is
       if (debouncedSearchQuery) {
         const query = debouncedSearchQuery.toLowerCase();
         if (
@@ -248,9 +248,21 @@ export default function BotLogsPage() {
         return false;
       }
 
+      // **Date Range filter**:
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const logDate = new Date(log.timestamp);
+        if (logDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const logDate = new Date(log.timestamp);
+        if (logDate > toDate) return false;
+      }
+
       return true;
     });
-  }, [logs, debouncedSearchQuery, activeFilters]);
+  }, [logs, debouncedSearchQuery, activeFilters, dateRange]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);

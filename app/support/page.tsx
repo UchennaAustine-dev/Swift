@@ -228,14 +228,32 @@ export default function SupportPage() {
           return false;
         }
       }
+
       for (const [key, value] of Object.entries(activeFilters)) {
         if (value && request[key as keyof SupportRequest] !== value) {
           return false;
         }
       }
+
+      // Date range filter applied here
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const createdDate = new Date(request.created.replace(" ", "T")); // iso string fix
+        if (createdDate < fromDate) {
+          return false;
+        }
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const createdDate = new Date(request.created.replace(" ", "T"));
+        if (createdDate > toDate) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [supportRequests, debouncedSearchQuery, activeFilters]);
+  }, [supportRequests, debouncedSearchQuery, activeFilters, dateRange]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
@@ -254,6 +272,7 @@ export default function SupportPage() {
     setSearchQuery("");
     setDebouncedSearchQuery("");
     setCurrentPage(1);
+    toast.success("Filters cleared");
   };
 
   const handleDateRangeChange = (range: { from: string; to: string }) => {

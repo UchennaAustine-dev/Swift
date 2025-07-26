@@ -225,13 +225,17 @@ export default function UsersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const filteredUsers = useMemo(() => {
     return mockUsers.filter((user) => {
-      // Search filter
+      // Existing search filtering
       if (debouncedSearchQuery) {
         const query = debouncedSearchQuery.toLowerCase();
         if (
@@ -242,16 +246,28 @@ export default function UsersPage() {
         }
       }
 
-      // Other filters
+      // Other filters (platform, role, status)
       for (const [key, value] of Object.entries(activeFilters)) {
         if (value && user[key as keyof User] !== value) {
           return false;
         }
       }
 
+      // *** Date range filtering on joinedAt ***
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const joinedDate = new Date(user.joinedAt);
+        if (joinedDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const joinedDate = new Date(user.joinedAt);
+        if (joinedDate > toDate) return false;
+      }
+
       return true;
     });
-  }, [debouncedSearchQuery, activeFilters]);
+  }, [debouncedSearchQuery, activeFilters, dateRange]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
@@ -275,7 +291,13 @@ export default function UsersPage() {
   const handleClearFilters = useCallback(() => {
     setActiveFilters({});
     setSearchQuery("");
+    toast.success("Filters cleared");
   }, []);
+
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
+  };
 
   const handlePageSizeChange = useCallback((value: string) => {
     setPageSize(Number(value));
@@ -607,6 +629,9 @@ export default function UsersPage() {
                     onFilterChange={handleFilterChange}
                     onClearFilters={handleClearFilters}
                     activeFilters={activeFilters}
+                    showDateFilter={true}
+                    dateRange={dateRange}
+                    onDateRangeChange={handleDateRangeChange}
                   />
 
                   <div className="rounded-lg border border-border/50 overflow-hidden">

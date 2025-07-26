@@ -261,9 +261,21 @@ export default function GiftCardAPIPage() {
         return false;
       }
 
+      // Date range filter (you can filter on lastSync)
+      if (dateRange.from) {
+        const fromDate = new Date(dateRange.from);
+        const sourceDate = new Date(source.lastSync);
+        if (sourceDate < fromDate) return false;
+      }
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        const sourceDate = new Date(source.lastSync);
+        if (sourceDate > toDate) return false;
+      }
+
       return true;
     });
-  }, [debouncedSearchQuery, activeFilters, apiSources]);
+  }, [debouncedSearchQuery, activeFilters, apiSources, dateRange]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredSources.length / pageSize);
