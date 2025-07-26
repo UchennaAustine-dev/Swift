@@ -8,7 +8,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
@@ -33,9 +32,11 @@ import {
   Moon,
 } from "lucide-react";
 import { MaintenanceModeModal } from "./modals/maintenance-mode-modal";
+import { useRouter } from "next/navigation";
 
 // Main Header Component
 export function Header() {
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
@@ -342,7 +343,7 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>

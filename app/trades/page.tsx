@@ -42,6 +42,9 @@ import {
   TrendingUp,
   Search,
   Zap,
+  FileSpreadsheet,
+  Database,
+  LoaderCircle,
 } from "lucide-react";
 import { SearchFilters } from "@/components/ui/search-filters";
 import { MobileTable } from "@/components/ui/mobile-table";
@@ -64,9 +67,209 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
-import type { Trade } from "@/lib/types";
 
-// Enhanced mock trade data with more realistic scenarios
+// Types
+interface User {
+  username: string;
+  platform: "telegram" | "whatsapp";
+}
+
+interface Trade {
+  id: string;
+  userId: string;
+  user: User;
+  assetType: string;
+  amount: string;
+  status:
+    | "started"
+    | "awaiting_proof"
+    | "rate_set"
+    | "paid"
+    | "completed"
+    | "cancelled";
+  rate: number;
+  payout: number;
+  createdAt: string;
+  updatedAt: string;
+  flags: string[];
+  notes: string;
+}
+
+// ExportDropdown Component
+interface ExportDropdownProps {
+  data: any[];
+  filename: string;
+  className?: string;
+}
+
+function ExportDropdown({ data, filename, className }: ExportDropdownProps) {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState<string | null>(null);
+
+  const handleExportStart = (type: string) => {
+    setIsExporting(true);
+    setExportType(type);
+  };
+
+  const handleExportEnd = (success: boolean, message: string) => {
+    setIsExporting(false);
+    setExportType(null);
+    toast[success ? "success" : "error"](message);
+  };
+
+  const exportToCSV = async () => {
+    handleExportStart("CSV");
+    try {
+      if (!data || data.length === 0) {
+        handleExportEnd(false, "No data to export");
+        return;
+      }
+
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(","),
+        ...data.map((row) =>
+          headers
+            .map((header) => {
+              const value = row[header];
+              if (
+                typeof value === "string" &&
+                (value.includes(",") || value.includes('"'))
+              ) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value ?? "";
+            })
+            .join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${filename}.csv`;
+      link.click();
+
+      handleExportEnd(true, "CSV exported successfully");
+    } catch (error) {
+      handleExportEnd(false, "Failed to export CSV");
+    }
+  };
+
+  const exportToJSON = async () => {
+    handleExportStart("JSON");
+    try {
+      if (!data || data.length === 0) {
+        handleExportEnd(false, "No data to export");
+        return;
+      }
+
+      const jsonData = {
+        exportDate: new Date().toISOString(),
+        filename: filename,
+        totalRecords: data.length,
+        data: data,
+      };
+
+      const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${filename}.json`;
+      link.click();
+
+      handleExportEnd(true, "JSON exported successfully");
+    } catch (error) {
+      handleExportEnd(false, "Failed to export JSON");
+    }
+  };
+
+  const exportToExcel = async () => {
+    handleExportStart("Excel");
+    try {
+      if (!data || data.length === 0) {
+        handleExportEnd(false, "No data to export");
+        return;
+      }
+      const headers = Object.keys(data[0]);
+      const tsvContent = [
+        headers.join("\t"),
+        ...data.map((row) =>
+          headers.map((header) => row[header] ?? "").join("\t")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([tsvContent], {
+        type: "application/vnd.ms-excel",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${filename}.xls`;
+      link.click();
+
+      handleExportEnd(true, "Excel (XLS) exported successfully");
+    } catch (error) {
+      handleExportEnd(false, "Failed to export Excel (XLS)");
+    }
+  };
+
+  const menuItemClasses =
+    "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors duration-150";
+
+  const buttonClasses = `${
+    className ?? ""
+  } cursor-pointer hover:bg-blue-300 dark:hover:bg-blue-700 transition-colors duration-150`;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={buttonClasses}
+          disabled={isExporting}
+          aria-label="Export data"
+        >
+          {isExporting && exportType ? (
+            <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          {isExporting ? `Exporting ${exportType}...` : "Export"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 bg-popover" forceMount>
+        <DropdownMenuItem
+          onClick={exportToCSV}
+          disabled={isExporting}
+          className={menuItemClasses}
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+          Export as CSV
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={exportToExcel}
+          disabled={isExporting}
+          className={menuItemClasses}
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2 text-blue-600" />
+          Export as Excel (XLS)
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={exportToJSON}
+          disabled={isExporting}
+          className={menuItemClasses}
+        >
+          <Database className="h-4 w-4 mr-2 text-yellow-600" />
+          Export as JSON
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// Enhanced mock trade data
 const mockTrades: Trade[] = [
   {
     id: "TXN001",
@@ -264,7 +467,6 @@ export default function TradesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [trades, setTrades] = useState<Trade[]>(mockTrades);
@@ -364,7 +566,6 @@ export default function TradesPage() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Data refreshed", {
         description: "Trade data has been updated.",
@@ -378,72 +579,7 @@ export default function TradesPage() {
     }
   }, []);
 
-  const handleExport = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const headers = [
-        "Trade ID",
-        "User",
-        "Platform",
-        "Asset Type",
-        "Amount",
-        "Status",
-        "Rate (₦)",
-        "Payout (₦)",
-        "Created At",
-        "Updated At",
-        "Flags",
-        "Notes",
-      ];
-
-      const csvContent = [
-        headers.join(","),
-        ...filteredTrades.map((trade) =>
-          [
-            trade.id,
-            trade.user.username,
-            trade.user.platform,
-            trade.assetType,
-            trade.amount,
-            trade.status,
-            trade.rate,
-            trade.payout,
-            format(new Date(trade.createdAt), "yyyy-MM-dd HH:mm:ss"),
-            format(new Date(trade.updatedAt), "yyyy-MM-dd HH:mm:ss"),
-            trade.flags.join("; "),
-            `"${trade.notes || ""}"`,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `trades_export_${format(new Date(), "yyyy-MM-dd")}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Export Successful", {
-        description: `Exported ${filteredTrades.length} trades to CSV file.`,
-      });
-    } catch (error) {
-      toast.error("Export Failed", {
-        description: "There was an error exporting the trades data.",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [filteredTrades]);
-
-  const handleTradeUpdate = useCallback((updatedTrade: Trade) => {
+  const handleTradeUpdate = useCallback((updatedTrade: Trade | any) => {
     setTrades((prev) =>
       prev.map((t) => (t.id === updatedTrade.id ? updatedTrade : t))
     );
@@ -594,6 +730,24 @@ export default function TradesPage() {
       )
     );
   };
+
+  // Prepare export data
+  const exportData = useMemo(() => {
+    return filteredTrades.map((trade) => ({
+      "Trade ID": trade.id,
+      User: trade.user.username,
+      Platform: trade.user.platform,
+      "Asset Type": trade.assetType,
+      Amount: trade.amount,
+      Status: trade.status,
+      "Rate (₦)": trade.rate,
+      "Payout (₦)": trade.payout,
+      "Created At": format(new Date(trade.createdAt), "yyyy-MM-dd HH:mm:ss"),
+      "Updated At": format(new Date(trade.updatedAt), "yyyy-MM-dd HH:mm:ss"),
+      Flags: trade.flags.join("; "),
+      Notes: trade.notes || "",
+    }));
+  }, [filteredTrades]);
 
   const columns = [
     {
@@ -993,15 +1147,15 @@ export default function TradesPage() {
                     />
                     {isRefreshing ? "Refreshing..." : "Refresh"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
+
+                  <ExportDropdown
+                    data={exportData}
+                    filename={`trades_export_${format(
+                      new Date(),
+                      "yyyy-MM-dd"
+                    )}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  />
                 </div>
               </div>
             </div>

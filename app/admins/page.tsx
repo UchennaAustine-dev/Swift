@@ -31,7 +31,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Download,
   Eye,
   Edit,
   UserX,
@@ -42,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddAdminModal } from "@/components/modals/add-admin-modal";
 import { ViewAdminModal } from "@/components/modals/view-admin-modal";
 import { EditAdminModal } from "@/components/modals/edit-admin-modal";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -178,7 +178,6 @@ export default function AdminsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [admins, setAdmins] = useState<Admin[]>(mockAdmins);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -248,61 +247,19 @@ export default function AdminsPage() {
     setPageSize(Number(value));
   }, []);
 
-  const handleExport = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const headers = [
-        "Username",
-        "Role",
-        "Status",
-        "Permissions",
-        "Created",
-        "Last Login",
-        "Created By",
-      ];
-
-      const csvContent = [
-        headers.join(","),
-        ...filteredAdmins.map((admin) =>
-          [
-            admin.username,
-            admin.role,
-            admin.status,
-            `"${admin.permissions.join(", ")}"`,
-            format(new Date(admin.created), "yyyy-MM-dd HH:mm:ss"),
-            admin.lastLogin
-              ? format(new Date(admin.lastLogin), "yyyy-MM-dd HH:mm:ss")
-              : "Never",
-            admin.createdBy,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `admins_export_${format(new Date(), "yyyy-MM-dd")}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Export Successful", {
-        description: `Exported ${filteredAdmins.length} admin accounts to CSV file.`,
-      });
-    } catch (error) {
-      toast.error("Export Failed", {
-        description: "There was an error exporting the admin data.",
-      });
-    } finally {
-      setIsExporting(false);
-    }
+  // Prepare export data with proper formatting
+  const exportData = useMemo(() => {
+    return filteredAdmins.map((admin) => ({
+      Username: admin.username,
+      Role: admin.role,
+      Status: admin.status,
+      Permissions: admin.permissions.join(", "),
+      Created: format(new Date(admin.created), "yyyy-MM-dd HH:mm:ss"),
+      "Last Login": admin.lastLogin
+        ? format(new Date(admin.lastLogin), "yyyy-MM-dd HH:mm:ss")
+        : "Never",
+      "Created By": admin.createdBy,
+    }));
   }, [filteredAdmins]);
 
   const handleAddAdmin = useCallback(
@@ -603,15 +560,14 @@ export default function AdminsPage() {
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button
-                    variant="outline"
+                  <ExportDropdown
+                    data={exportData}
+                    filename={`admins_export_${format(
+                      new Date(),
+                      "yyyy-MM-dd"
+                    )}`}
                     className="bg-green-600 hover:bg-green-700 text-white cursor-pointer hover:text-white hover:border-none"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
+                  />
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-blue-400 hover:bg-blue-500 text-white cursor-pointer hover:text-white hover:border-none"
