@@ -1,7 +1,7 @@
-// app/profile/page.tsx
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockAdminData } from "@/data/profileData";
 import {
@@ -18,8 +18,12 @@ import { OverviewTab } from "@/components/profile/tabs/overview-tab";
 import { PermissionsTab } from "@/components/profile/tabs/permissions-tab";
 import { PreferencesTab } from "@/components/profile/tabs/preferences-tab";
 import { SecurityTab } from "@/components/profile/tabs/security-tab";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 
 export default function ProfilePage() {
+  const router = useRouter();
+
   const [adminData, setAdminData] = useState<AdminUser>(mockAdminData);
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -116,6 +120,18 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      {/* Back Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="mb-6 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+        onClick={() => router.back()}
+        aria-label="Go back"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back
+      </Button>
+
       <ProfileHeader
         adminData={adminData}
         isEditing={isEditing}
