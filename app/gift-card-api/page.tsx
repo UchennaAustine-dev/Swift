@@ -210,7 +210,6 @@ export default function GiftCardAPIPage() {
   const [selectedAPI, setSelectedAPI] = useState<APISource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [apiSources, setApiSources] = useState<APISource[]>(mockAPISources);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -222,6 +221,10 @@ export default function GiftCardAPIPage() {
     api: null,
   });
   const [testingAPI, setTestingAPI] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -286,6 +289,11 @@ export default function GiftCardAPIPage() {
   const handlePageSizeChange = useCallback((value: string) => {
     setPageSize(Number(value));
   }, []);
+
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
+  };
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -863,6 +871,9 @@ export default function GiftCardAPIPage() {
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 activeFilters={activeFilters}
+                showDateFilter={true}
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
             </div>

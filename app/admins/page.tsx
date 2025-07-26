@@ -188,6 +188,10 @@ export default function AdminsPage() {
     isOpen: false,
     admin: null,
   });
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -313,6 +317,11 @@ export default function AdminsPage() {
       setSuspendDialog({ isOpen: false, admin: null });
     }
   }, []);
+
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -680,6 +689,9 @@ export default function AdminsPage() {
                         onFilterChange={handleFilterChange}
                         onClearFilters={handleClearFilters}
                         activeFilters={activeFilters}
+                        showDateFilter={true}
+                        dateRange={dateRange}
+                        onDateRangeChange={handleDateRangeChange}
                       />
 
                       <div className="rounded-lg border border-border/50 overflow-hidden">

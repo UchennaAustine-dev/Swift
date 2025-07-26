@@ -76,7 +76,6 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
-  Download,
   Loader2,
   Plus,
 } from "lucide-react";

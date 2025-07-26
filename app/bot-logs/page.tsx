@@ -178,6 +178,10 @@ export default function BotLogsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<BotLog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   // Debounced search
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -272,54 +276,9 @@ export default function BotLogsPage() {
     setSearchQuery("");
   }, []);
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // Simulate export process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Create CSV content
-      const headers = [
-        "Timestamp",
-        "Bot Type",
-        "Level",
-        "Event",
-        "Message",
-        "User",
-        "Response Time",
-      ];
-      const csvContent = [
-        headers.join(","),
-        ...filteredLogs.map((log) =>
-          [
-            log.timestamp,
-            log.botType,
-            log.level,
-            log.event,
-            `"${log.message.replace(/"/g, '""')}"`,
-            log.username || "System",
-            log.responseTime || "N/A",
-          ].join(",")
-        ),
-      ].join("\n");
-
-      // Download CSV
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `bot-logs-${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Bot logs exported successfully");
-    } catch (error) {
-      toast.error("Failed to export bot logs");
-    } finally {
-      setIsExporting(false);
-    }
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
   };
 
   const handleRefresh = async () => {
@@ -716,6 +675,9 @@ export default function BotLogsPage() {
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 activeFilters={activeFilters}
+                showDateFilter={true}
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
               <ExportDropdown

@@ -67,6 +67,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
+import { ExportDropdown } from "@/components/ui/export-dropdown";
 
 // Types
 interface User {
@@ -93,180 +94,6 @@ interface Trade {
   updatedAt: string;
   flags: string[];
   notes: string;
-}
-
-// ExportDropdown Component
-interface ExportDropdownProps {
-  data: any[];
-  filename: string;
-  className?: string;
-}
-
-function ExportDropdown({ data, filename, className }: ExportDropdownProps) {
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportType, setExportType] = useState<string | null>(null);
-
-  const handleExportStart = (type: string) => {
-    setIsExporting(true);
-    setExportType(type);
-  };
-
-  const handleExportEnd = (success: boolean, message: string) => {
-    setIsExporting(false);
-    setExportType(null);
-    toast[success ? "success" : "error"](message);
-  };
-
-  const exportToCSV = async () => {
-    handleExportStart("CSV");
-    try {
-      if (!data || data.length === 0) {
-        handleExportEnd(false, "No data to export");
-        return;
-      }
-
-      const headers = Object.keys(data[0]);
-      const csvContent = [
-        headers.join(","),
-        ...data.map((row) =>
-          headers
-            .map((header) => {
-              const value = row[header];
-              if (
-                typeof value === "string" &&
-                (value.includes(",") || value.includes('"'))
-              ) {
-                return `"${value.replace(/"/g, '""')}"`;
-              }
-              return value ?? "";
-            })
-            .join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${filename}.csv`;
-      link.click();
-
-      handleExportEnd(true, "CSV exported successfully");
-    } catch (error) {
-      handleExportEnd(false, "Failed to export CSV");
-    }
-  };
-
-  const exportToJSON = async () => {
-    handleExportStart("JSON");
-    try {
-      if (!data || data.length === 0) {
-        handleExportEnd(false, "No data to export");
-        return;
-      }
-
-      const jsonData = {
-        exportDate: new Date().toISOString(),
-        filename: filename,
-        totalRecords: data.length,
-        data: data,
-      };
-
-      const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
-        type: "application/json",
-      });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${filename}.json`;
-      link.click();
-
-      handleExportEnd(true, "JSON exported successfully");
-    } catch (error) {
-      handleExportEnd(false, "Failed to export JSON");
-    }
-  };
-
-  const exportToExcel = async () => {
-    handleExportStart("Excel");
-    try {
-      if (!data || data.length === 0) {
-        handleExportEnd(false, "No data to export");
-        return;
-      }
-      const headers = Object.keys(data[0]);
-      const tsvContent = [
-        headers.join("\t"),
-        ...data.map((row) =>
-          headers.map((header) => row[header] ?? "").join("\t")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([tsvContent], {
-        type: "application/vnd.ms-excel",
-      });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${filename}.xls`;
-      link.click();
-
-      handleExportEnd(true, "Excel (XLS) exported successfully");
-    } catch (error) {
-      handleExportEnd(false, "Failed to export Excel (XLS)");
-    }
-  };
-
-  const menuItemClasses =
-    "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors duration-150";
-
-  const buttonClasses = `${
-    className ?? ""
-  } cursor-pointer hover:bg-blue-300 dark:hover:bg-blue-700 transition-colors duration-150`;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={buttonClasses}
-          disabled={isExporting}
-          aria-label="Export data"
-        >
-          {isExporting && exportType ? (
-            <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4 mr-2" />
-          )}
-          {isExporting ? `Exporting ${exportType}...` : "Export"}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-popover" forceMount>
-        <DropdownMenuItem
-          onClick={exportToCSV}
-          disabled={isExporting}
-          className={menuItemClasses}
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
-          Export as CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={exportToExcel}
-          disabled={isExporting}
-          className={menuItemClasses}
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-2 text-blue-600" />
-          Export as Excel (XLS)
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={exportToJSON}
-          disabled={isExporting}
-          className={menuItemClasses}
-        >
-          <Database className="h-4 w-4 mr-2 text-yellow-600" />
-          Export as JSON
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }
 
 // Enhanced mock trade data
@@ -472,7 +299,11 @@ export default function TradesPage() {
   const [trades, setTrades] = useState<Trade[]>(mockTrades);
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
+  // const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -562,6 +393,11 @@ export default function TradesPage() {
     },
     [sortField, sortDirection]
   );
+
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
+  };
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -1260,6 +1096,9 @@ export default function TradesPage() {
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 activeFilters={activeFilters}
+                showDateFilter={true}
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
             </div>

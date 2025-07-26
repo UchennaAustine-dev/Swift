@@ -172,6 +172,10 @@ export default function SystemLogsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   // Debounced search
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -236,54 +240,9 @@ export default function SystemLogsPage() {
     setSearchQuery("");
   }, []);
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // Simulate export process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Create CSV content
-      const headers = [
-        "Timestamp",
-        "Category",
-        "Action",
-        "Description",
-        "User",
-        "IP Address",
-        "Severity",
-      ];
-      const csvContent = [
-        headers.join(","),
-        ...filteredLogs.map((log) =>
-          [
-            log.timestamp,
-            log.category,
-            log.action,
-            `"${log.description.replace(/"/g, '""')}"`,
-            log.username || "System",
-            log.ipAddress || "N/A",
-            log.severity,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      // Download CSV
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `system-logs-${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("System logs exported successfully");
-    } catch (error) {
-      toast.error("Failed to export system logs");
-    } finally {
-      setIsExporting(false);
-    }
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
+    setCurrentPage(1);
   };
 
   const getCategoryIcon = (category: string) => {
@@ -614,6 +573,9 @@ export default function SystemLogsPage() {
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 activeFilters={activeFilters}
+                showDateFilter={true}
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
                 className="flex-1"
               />
               <ExportDropdown

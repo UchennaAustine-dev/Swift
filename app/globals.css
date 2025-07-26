@@ -322,3 +322,13 @@
 .sidebar-provider * {
   background-color: inherit;
 }
+
+/* Add in your tailwind or global css */
+.logo-upload-wrapper {
+  transition: box-shadow 0.3s ease;
+}
+.logo-upload-wrapper:hover,
+.logo-upload-wrapper:focus-within {
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.6); /* blue glow */
+  outline: none; /* Use focus ring for accessibility */
+}

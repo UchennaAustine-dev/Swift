@@ -182,6 +182,10 @@ export default function SupportPage() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
 
   // Debounced search
   useMemo(() => {
@@ -249,6 +253,11 @@ export default function SupportPage() {
     setActiveFilters({});
     setSearchQuery("");
     setDebouncedSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  const handleDateRangeChange = (range: { from: string; to: string }) => {
+    setDateRange(range);
     setCurrentPage(1);
   };
 
@@ -625,6 +634,9 @@ export default function SupportPage() {
                   onFilterChange={handleFilterChange}
                   onClearFilters={handleClearFilters}
                   activeFilters={activeFilters}
+                  showDateFilter={true}
+                  dateRange={dateRange}
+                  onDateRangeChange={handleDateRangeChange}
                 />
                 <MobileTable
                   data={paginatedRequests}
