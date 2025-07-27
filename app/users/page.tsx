@@ -40,6 +40,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { User } from "@/lib/types";
+import { EditUserModal } from "@/components/modals/edit-user-modal";
 
 // Enhanced mock user data with more diversity
 const mockUsers: User[] = [
@@ -439,6 +440,14 @@ export default function UsersPage() {
       },
     },
     {
+      label: "Edit",
+      onClick: (user: User) => {
+        setSelectedUser(user);
+        setModalMode("edit");
+        setIsModalOpen(true);
+      },
+    },
+    {
       label: "Block",
       onClick: (user: User) => {
         setSelectedUser(user);
@@ -763,6 +772,20 @@ export default function UsersPage() {
           setSelectedUser(null);
         }}
         mode={modalMode}
+      />
+
+      <EditUserModal
+        user={selectedUser}
+        isOpen={isModalOpen && modalMode === "edit"}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedUser(null);
+        }}
+        onUserUpdate={(updatedUser) => {
+          // Handle user update in the main component
+          console.log("User updated:", updatedUser);
+          // You can update the mockUsers array or refetch data here
+        }}
       />
     </SidebarProvider>
   );
